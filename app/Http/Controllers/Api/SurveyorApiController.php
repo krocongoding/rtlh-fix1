@@ -201,22 +201,10 @@ class SurveyorApiController extends Controller
 
         $house->update(['status' => 'submitted']);
 
-        // Buat atau update assessment untuk tahun survei
-        if ($house->survey_year) {
-            $assessment = $house->assessments()->firstOrCreate(
-                ['assessment_year' => $house->survey_year],
-                [
-                    'assessment_date' => now(),
-                    'assessor_id'     => $request->user()->id,
-                    'status'          => 'submitted',
-                ]
-            );
-            $assessment->update([
-                'assessment_date' => now(),
-                'assessor_id'     => $request->user()->id,
-                'status'          => 'submitted',
-            ]);
-        }
+        // Sinkronkan penilaian skor otomatis dari data survei fisik
+        $assessmentService = app(\App\Services\HouseAssessmentService::class);
+        $assessment = $assessmentService->syncAssessment($house, $request->user()->id);
+        $assessment->update(['status' => 'submitted']);
 
         AuditLogger::log(
             $request->user(),

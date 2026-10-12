@@ -9,7 +9,7 @@
                     Assessment RTLH — {{ $house->house_code }}
                 </h1>
                 <p class="muted" style="margin-top:4px;">
-                    Formulir evaluasi tingkat kerusakan dan pembobotan prioritas penerima bantuan.
+                    Formulir evaluasi tingkat kerusakan dan pembobotan prioritas penerima bantuan dengan kalkulasi skor otomatis.
                 </p>
             </div>
 
@@ -45,7 +45,36 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('houses.assessment.update', $house) }}">
+        {{-- SCORE INFO CARD --}}
+        <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left:4px solid var(--primary-600);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div style="font-size:12px; font-weight:800; text-transform:uppercase; color:var(--primary-700); letter-spacing:0.5px;">
+                        <i class="fa-solid fa-calculator"></i> Standar Penilaian Skor Otomatis RTLH
+                    </div>
+                    <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
+                        <span class="badge" style="background:#ecfdf5; color:#047857; font-weight:700;">BAIK = 0</span>
+                        <span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;">RUSAK RINGAN (PERMUKAAN) = 1</span>
+                        <span class="badge" style="background:#ffedd5; color:#c2410c; font-weight:700;">RUSAK SEDANG (MATERIAL) = 2</span>
+                        <span class="badge" style="background:#fee2e2; color:#b91c1c; font-weight:700;">RUSAK BERAT = 3</span>
+                    </div>
+                </div>
+
+                @if(isset($surveyScoreData))
+                    <div style="text-align:right;">
+                        <div class="muted" style="font-size:11px;">SKOR OTOMATIS DATA SURVEI FISIK</div>
+                        <div style="font-size:24px; font-weight:900; color:var(--primary-700);">
+                            {{ $surveyScoreData['total_score'] }}
+                            <span style="font-size:13px; font-weight:600; color:var(--slate-600);">
+                                (Prioritas {{ ucfirst($surveyScoreData['priority_level']) }})
+                            </span>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('houses.assessment.update', $house) }}" id="assessmentForm">
             @csrf
             @method('PUT')
 
@@ -59,7 +88,7 @@
                         <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
                             Ringkasan & Skor Assessment
                         </h3>
-                        <p class="muted" style="font-size:12px; margin:0;">Informasi waktu survei, status kelayakan, dan penetapan prioritas.</p>
+                        <p class="muted" style="font-size:12px; margin:0;">Informasi waktu survei, status verifikasi, dan penetapan skor prioritas.</p>
                     </div>
                 </div>
 
@@ -70,7 +99,7 @@
                             type="number"
                             id="assessment_year"
                             name="assessment_year"
-                            value="{{ old('assessment_year', $assessment?->assessment_year ?? now()->year) }}"
+                            value="{{ old('assessment_year', $assessment?->assessment_year ?? $house->survey_year ?? now()->year) }}"
                             min="2000"
                             max="2100"
                             required
@@ -92,35 +121,41 @@
                         <label for="status">Status Verifikasi <span style="color:#e11d48;">*</span></label>
                         <select id="status" name="status" required>
                             <option value="">-- Pilih Status --</option>
-                            <option value="draft" @selected(old('status', $assessment?->status) === 'draft')>Draft</option>
+                            <option value="draft" @selected(old('status', $assessment?->status ?? 'draft') === 'draft')>Draft</option>
                             <option value="completed" @selected(old('status', $assessment?->status) === 'completed')>Selesai</option>
                             <option value="verified" @selected(old('status', $assessment?->status) === 'verified')>Terverifikasi</option>
                         </select>
                     </div>
                 </div>
 
+                @php
+                    $defaultScore = $assessment?->score ?? ($surveyScoreData['total_score'] ?? 0);
+                    $defaultPriority = $assessment?->priority_level ?? ($surveyScoreData['priority_level'] ?? 'rendah');
+                @endphp
+
                 <div class="grid2">
                     <div class="form-group">
-                        <label for="priority_level">Tingkat Prioritas Bantuan</label>
-                        <select id="priority_level" name="priority_level">
-                            <option value="">-- Pilih Prioritas --</option>
-                            <option value="rendah" @selected(old('priority_level', $assessment?->priority_level) === 'rendah')>Rendah (Kerusakan Ringan)</option>
-                            <option value="sedang" @selected(old('priority_level', $assessment?->priority_level) === 'sedang')>Sedang (Kerusakan Sedang)</option>
-                            <option value="tinggi" @selected(old('priority_level', $assessment?->priority_level) === 'tinggi')>Tinggi (Kerusakan Berat / Mendesak)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="score">Nilai / Skor Total Penilaian</label>
+                        <label for="score">Nilai / Skor Total Penilaian (Otomatis)</label>
                         <input
                             type="number"
                             id="score"
                             name="score"
-                            value="{{ old('score', $assessment?->score) }}"
+                            value="{{ old('score', $defaultScore) }}"
                             min="0"
                             step="0.01"
-                            placeholder="Contoh: 75.50"
+                            placeholder="Contoh: 8.00"
                         >
+                        <small class="muted">Skor dihitung otomatis dari pilihan parameter kerusakan (0 = Baik, 1 = RR, 2 = RS, 3 = RB).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="priority_level">Tingkat Prioritas Bantuan</label>
+                        <select id="priority_level" name="priority_level">
+                            <option value="">-- Pilih Prioritas --</option>
+                            <option value="rendah" @selected(old('priority_level', $defaultPriority) === 'rendah')>Rendah (Kerusakan Ringan / Layak)</option>
+                            <option value="sedang" @selected(old('priority_level', $defaultPriority) === 'sedang')>Sedang (Kerusakan Sedang)</option>
+                            <option value="tinggi" @selected(old('priority_level', $defaultPriority) === 'tinggi')>Tinggi (Kerusakan Berat / Mendesak)</option>
+                        </select>
                     </div>
                 </div>
 
@@ -153,7 +188,7 @@
                             <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
                                 Parameter & Indikator Kelayakan Hunian
                             </h3>
-                            <p class="muted" style="font-size:12px; margin:0;">Pilih kondisi untuk masing-masing parameter penilaian fisik & utilitas.</p>
+                            <p class="muted" style="font-size:12px; margin:0;">Pilih kondisi untuk masing-masing parameter. Skor otomatis dihitung saat opsi dipilih.</p>
                         </div>
                     </div>
                     <span class="badge published" style="font-size:11px;">
@@ -198,13 +233,21 @@
                                     <select
                                         id="category_{{ $category->id }}"
                                         name="items[{{ $loop->index }}][value]"
-                                        onchange="toggleOtherInput({{ $category->id }}, this.value)"
+                                        class="assessment-param-select"
+                                        onchange="handleCategoryChange({{ $category->id }}, this)"
                                         style="background:#fff; margin-bottom:8px;"
                                     >
-                                        <option value="">-- Pilih {{ $category->name }} --</option>
+                                        <option value="" data-score="0">-- Pilih {{ $category->name }} --</option>
                                         @foreach ($category->values as $value)
-                                            <option value="{{ $value->code }}" @selected($selectedValue === $value->code)>
-                                                {{ $value->label }}
+                                            @php
+                                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($value->code, $value->label, $value->sort_order);
+                                            @endphp
+                                            <option
+                                                value="{{ $value->code }}"
+                                                data-score="{{ $sc }}"
+                                                @selected($selectedValue === $value->code)
+                                            >
+                                                {{ $value->label }} (Skor: {{ $sc }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -271,6 +314,39 @@
             } else {
                 wrapper.style.display = 'none';
                 if (input) input.value = '';
+            }
+        }
+
+        function handleCategoryChange(categoryId, selectEl) {
+            toggleOtherInput(categoryId, selectEl.value);
+            recalculateAssessmentScore();
+        }
+
+        function recalculateAssessmentScore() {
+            const selects = document.querySelectorAll('.assessment-param-select');
+            let sum = 0;
+
+            selects.forEach(sel => {
+                const opt = sel.options[sel.selectedIndex];
+                const score = parseFloat(opt?.dataset?.score || 0);
+                sum += score;
+            });
+
+            const scoreInput = document.getElementById('score');
+            const prioritySelect = document.getElementById('priority_level');
+
+            if (scoreInput) {
+                scoreInput.value = sum;
+            }
+
+            if (prioritySelect) {
+                if (sum >= 12) {
+                    prioritySelect.value = 'tinggi';
+                } else if (sum >= 6) {
+                    prioritySelect.value = 'sedang';
+                } else {
+                    prioritySelect.value = 'rendah';
+                }
             }
         }
     </script>

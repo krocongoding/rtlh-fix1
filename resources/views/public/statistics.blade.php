@@ -179,7 +179,7 @@
         <div style="padding: 20px 24px; border-bottom: 1px solid var(--slate-200); background: var(--slate-50); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
             <div>
                 <h3 style="font-size: 17px; font-weight: 800; color: var(--slate-900); margin-bottom: 2px;">
-                    <i class="fa-solid fa-tree-city text-sky-600" style="color:#0284c7;"></i> Rekapitulasi per Desa / Kelurahan
+                    Rekapitulasi per Desa / Kelurahan
                 </h3>
                 <p class="muted" style="font-size: 13px;">Gunakan filter untuk melihat data per kecamatan secara spesifik.</p>
             </div>

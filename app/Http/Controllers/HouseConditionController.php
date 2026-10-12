@@ -42,10 +42,13 @@ class HouseConditionController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $roofMaterials = $roofMaterial->values()
+        $foundationType = MasterCategory::where('code', 'FOUNDATION_TYPE')
+            ->first();
+
+        $foundationTypes = $foundationType ? $foundationType->values()
             ->where('is_active', true)
             ->orderBy('sort_order')
-            ->get();
+            ->get() : collect();
 
         $house->load([
             'structure',
@@ -57,6 +60,7 @@ class HouseConditionController extends Controller
         return view('houses.condition', compact(
             'house',
             'conditions',
+            'foundationTypes',
             'floorMaterials',
             'wallMaterials',
             'roofMaterials'
@@ -157,8 +161,12 @@ class HouseConditionController extends Controller
             );
         });
 
+        // Perbarui penilaian skor secara otomatis
+        $assessmentService = app(\App\Services\HouseAssessmentService::class);
+        $assessmentService->syncAssessment($house, auth()->id());
+
         return redirect()
             ->route('houses.show', $house)
-            ->with('success', 'Kondisi fisik rumah berhasil disimpan.');
+            ->with('success', 'Kondisi fisik rumah & penilaian skor otomatis berhasil diperbarui.');
     }
 }   

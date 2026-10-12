@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MasterCategory;
+use App\Http\Requests\HouseRequest;
 use App\Models\House;
-use Illuminate\Support\Facades\Gate;
+use App\Models\MasterCategory;
+use App\Models\Region;
+use App\Services\HouseDataService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class HouseController extends Controller
 {
@@ -30,127 +33,153 @@ class HouseController extends Controller
         return view('houses.index', compact('houses'));
     }
 
-   public function create()
+    public function create()
     {
-    $districts = \App\Models\Region::where('level', 1)
+        $cats = MasterCategory::with([
+            'values' => function ($query) {
+                $query->where('is_active', true)
+                    ->orderBy('sort_order');
+            }
+        ])
         ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
+        ->get()
+        ->keyBy('code');
 
-    $villages = \App\Models\Region::where('level', 2)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
+        $regions = Region::query()
+            ->where('is_active', true)
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
 
-    return view('houses.create', compact('districts', 'villages'));
+        return view('houses.form', [
+            'house' => new House(),
+            'regions' => $regions,
+            'cats' => $cats,
+            'action' => route('houses.store'),
+            'method' => 'POST',
+            'panel' => 'admin',
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(HouseRequest $request, HouseDataService $service)
     {
-         $validated = $request->validate([
-            'region_id' => ['required', 'exists:regions,id'],
-            'house_code' => ['required', 'string', 'max:50', 'unique:houses,house_code'],
-            'address' => ['nullable', 'string'],
-            'block' => ['nullable', 'string', 'max:100'],
-            'rt' => ['nullable', 'string', 'max:10'],
-            'rw' => ['nullable', 'string', 'max:10'],
-            'area_m2' => ['nullable', 'numeric', 'min:0'],
-            'occupant_count' => ['nullable', 'integer', 'min:0'],
-            'household_count' => ['nullable', 'integer', 'min:0'],
-            'survey_year' => ['required', 'integer', 'min:2000', 'max:2100'],
-            ]);
+        $validated = $request->validated();
+        $submit = $request->boolean('submit');
 
-        $validated['status'] = 'draft';
-        $validated['is_public'] = false;
+        $house = House::create([
+            ...$validated,
+            'house_code' => $service->generateUniqueCode($validated['region_id']),
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+            'status' => 'draft',
+            'is_public' => false,
+        ]);
 
-        $house = House::create($validated);
+        $service->save($house, $validated, auth()->id(), $submit);
+
+        if ($request->hasFile('photo_front') || $request->hasFile('photo_angle') || $request->hasFile('photo_side') || $request->hasFile('photo_back') || $request->hasFile('photo_family_room') || $request->hasFile('photo_bathroom')) {
+            $service->storePhotos($house, $request->allFiles(), auth()->id());
+        }
 
         return redirect()
             ->route('houses.show', $house)
             ->with('success', 'Data RTLH berhasil ditambahkan.');
     }
 
-public function edit(House $house)
-{
-    $villages = \App\Models\Region::where('level', 2)
+    public function edit(House $house)
+    {
+        $house->load([
+            'structure',
+            'floor',
+            'wall',
+            'ceiling',
+            'roof',
+            'sanitation',
+            'utility',
+            'photos',
+        ]);
+
+        $cats = MasterCategory::with([
+            'values' => function ($query) {
+                $query->where('is_active', true)
+                    ->orderBy('sort_order');
+            }
+        ])
         ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
+        ->get()
+        ->keyBy('code');
 
-    return view('houses.edit', compact('house', 'villages'));
-}
+        $regions = Region::query()
+            ->where('is_active', true)
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
 
-public function destroy(House $house)
-{
-    Gate::authorize('delete', $house);
+        return view('houses.form', [
+            'house' => $house,
+            'regions' => $regions,
+            'cats' => $cats,
+            'action' => route('houses.update', $house),
+            'method' => 'PUT',
+            'panel' => 'admin',
+        ]);
+    }
 
-    $house->delete();
+    public function update(HouseRequest $request, House $house, HouseDataService $service)
+    {
+        $validated = $request->validated();
+        $submit = $request->boolean('submit');
 
-    return redirect()
-        ->route('houses.index')
-        ->with('success', 'Data RTLH berhasil dihapus.');
-}
+        $service->save($house, $validated, auth()->id(), $submit);
 
-public function update(Request $request, House $house)
-{
-    $validated = $request->validate([
-        'region_id' => ['required', 'exists:regions,id'],
-        'house_code' => [
-            'required',
-            'string',
-            'max:50',
-            'unique:houses,house_code,' . $house->id,
-        ],
-        'address' => ['nullable', 'string'],
-        'block' => ['nullable', 'string', 'max:100'],
-        'rt' => ['nullable', 'string', 'max:10'],
-        'rw' => ['nullable', 'string', 'max:10'],
-        'area_m2' => ['nullable', 'numeric', 'min:0'],
-        'occupant_count' => ['nullable', 'integer', 'min:0'],
-        'household_count' => ['nullable', 'integer', 'min:0'],
-        'survey_year' => [
-            'required',
-            'integer',
-            'min:2000',
-            'max:2100',
-        ],
-    ]);
+        if ($request->hasFile('photo_front') || $request->hasFile('photo_angle') || $request->hasFile('photo_side') || $request->hasFile('photo_back') || $request->hasFile('photo_family_room') || $request->hasFile('photo_bathroom')) {
+            $service->storePhotos($house, $request->allFiles(), auth()->id());
+        }
 
-    $house->update($validated);
+        return redirect()
+            ->route('houses.show', $house)
+            ->with('success', 'Data RTLH berhasil diperbarui.');
+    }
 
-    return redirect()
-        ->route('houses.show', $house)
-        ->with('success', 'Data RTLH berhasil diperbarui.');
-}
+    public function destroy(House $house)
+    {
+        Gate::authorize('delete', $house);
+
+        $house->delete();
+
+        return redirect()
+            ->route('houses.index')
+            ->with('success', 'Data RTLH berhasil dihapus.');
+    }
 
     public function show(House $house)
     {
-       $house->load([
-        'region',
-        'assessments.items',
-        'structure.sloofCondition',
-        'structure.columnCondition',
-        'structure.beamCondition',
-        'floor.material',
-        'floor.condition',
-        'wall.material',
-        'wall.condition',
-        'roof.frameCondition',
-        'roof.material',
-        'roof.condition',
-        'sanitation.waterSource',
-        'sanitation.toiletType',
-        'sanitation.fecalDisposalType',
-        'utility.lightingSource',
-        'occupants',
-        'photos',
-    ]);
+        $house->load([
+            'region',
+            'assessments.items',
+            'structure.sloofCondition',
+            'structure.columnCondition',
+            'structure.beamCondition',
+            'floor.material',
+            'floor.condition',
+            'wall.material',
+            'wall.condition',
+            'roof.frameCondition',
+            'roof.material',
+            'roof.condition',
+            'sanitation.waterSource',
+            'sanitation.toiletType',
+            'sanitation.fecalDisposalType',
+            'utility.lightingSource',
+            'occupants',
+            'photos',
+        ]);
 
-    $assessmentCategories = MasterCategory::with([
-    'values' => function ($query) {
-        $query->where('is_active', true)
-            ->orderBy('sort_order');
-    }
+        $assessmentCategories = MasterCategory::with([
+            'values' => function ($query) {
+                $query->where('is_active', true)
+                    ->orderBy('sort_order');
+            }
         ])
         ->where('is_active', true)
         ->orderBy('id')
@@ -159,6 +188,6 @@ public function update(Request $request, House $house)
         return view('houses.show', compact(
             'house',
             'assessmentCategories'
-            ));
+        ));
     }
 }

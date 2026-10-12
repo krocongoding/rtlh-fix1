@@ -376,40 +376,75 @@
 
         {{-- SECTION 2: KONDISI STRUKTUR --}}
         <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge blue">
-                    2
+            <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <div class="form-section-badge blue">
+                        2
+                    </div>
+                    <div>
+                        <h3 class="form-section-title">Kondisi Struktur Utama Bangunan</h3>
+                        <p class="form-section-desc">Pondasi dasar, sloof pengikat, kolom struktural, dan balok penopang.</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="form-section-title">Kondisi Struktur Utama Bangunan</h3>
-                    <p class="form-section-desc">Pondasi dasar, sloof pengikat, kolom struktural, dan balok penopang.</p>
+
+                {{-- LIVE AUTO-SCORE BADGE --}}
+                <div style="background:var(--slate-50); border:1px solid var(--slate-200); padding:6px 14px; border-radius:var(--radius-lg); display:flex; align-items:center; gap:12px;">
+                    <div style="font-size:11px; font-weight:700; color:var(--slate-600); text-transform:uppercase;">
+                        <i class="fa-solid fa-calculator" style="color:var(--primary-600);"></i> Skor Otomatis Survei:
+                    </div>
+                    <div style="font-size:18px; font-weight:900; color:var(--primary-700); font-family:monospace;" id="form-live-score">0</div>
+                    <span id="form-live-priority" class="badge priority-low" style="font-size:11px;">Prioritas Rendah</span>
                 </div>
             </div>
 
             <div class="grid2">
                 <div class="form-field">
-                    <label for="foundation">Deskripsi Pondasi</label>
-                    <input
-                        type="text"
-                        id="foundation"
-                        name="foundation"
-                        value="{{ old('foundation', $house->structure?->foundation) }}"
-                        placeholder="Contoh: Batu kali / Tanpa pondasi"
-                    >
+                    <label for="foundation">Jenis Pondasi</label>
+                    @php
+                        $currentFoundation = old('foundation', $house->structure?->foundation);
+                        $defaultFoundations = [
+                            'BATU KALI / BATU BELAH',
+                            'BETON BERTULANG / TAPAK',
+                            'BATA MERAH / ROLAG',
+                            'KAYU / CERUCUK',
+                            'BAMBU',
+                            'TANPA PONDASI / MENUMPANG TANAH',
+                            'LAINNYA',
+                        ];
+                        $foundationValues = isset($cats['FOUNDATION_TYPE']) && $cats['FOUNDATION_TYPE']->values->isNotEmpty()
+                            ? $cats['FOUNDATION_TYPE']->values->pluck('label')->toArray()
+                            : $defaultFoundations;
+                    @endphp
+                    <select id="foundation" name="foundation">
+                        <option value="">-- Pilih Jenis Pondasi --</option>
+                        @foreach($foundationValues as $opt)
+                            <option value="{{ $opt }}" @selected(strtoupper(trim((string)$currentFoundation)) === strtoupper(trim($opt)))>
+                                {{ $opt }}
+                            </option>
+                        @endforeach
+                        @if($currentFoundation && !in_array(strtoupper(trim($currentFoundation)), array_map('strtoupper', array_map('trim', $foundationValues))))
+                            <option value="{{ $currentFoundation }}" selected>
+                                {{ $currentFoundation }}
+                            </option>
+                        @endif
+                    </select>
                 </div>
 
                 @foreach([
                     ['sloof_condition_id', 'Kondisi Sloof / Balok Dasar', 'structure'],
-                    ['column_condition_id', 'Kondisi Kolom / Tiang', 'structure'],
+                    ['column_condition_id', 'Kondisi Kolom / Tiang Penopang', 'structure'],
                     ['beam_condition_id', 'Kondisi Balok Pengikat', 'structure']
                 ] as [$field, $label, $rel])
                     <div class="form-field">
                         <label for="{{ $field }}">{{ $label }}</label>
-                        <select id="{{ $field }}" name="{{ $field }}">
-                            <option value="">-- Pilih Kondisi --</option>
+                        <select id="{{ $field }}" name="{{ $field }}" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi --</option>
                             @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                                <option value="{{ $v->id }}" @selected(old($field, $house->{$rel}?->{$field}) == $v->id)>
-                                    {{ $v->label }}
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old($field, $house->{$rel}?->{$field}) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
                                 </option>
                             @endforeach
                         </select>
@@ -446,11 +481,14 @@
 
                 <div class="form-field">
                     <label for="floor_condition_id">Kondisi Lantai</label>
-                    <select id="floor_condition_id" name="floor_condition_id">
-                        <option value="">-- Pilih Kondisi --</option>
+                    <select id="floor_condition_id" name="floor_condition_id" class="score-calc-select">
+                        <option value="" data-score="0">-- Pilih Kondisi --</option>
                         @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('floor_condition_id', $house->floor?->condition_id) == $v->id)>
-                                {{ $v->label }}
+                            @php
+                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                            @endphp
+                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('floor_condition_id', $house->floor?->condition_id) == $v->id)>
+                                {{ $v->label }} (Skor: {{ $sc }})
                             </option>
                         @endforeach
                     </select>
@@ -471,11 +509,14 @@
 
                 <div class="form-field">
                     <label for="wall_condition_id">Kondisi Dinding</label>
-                    <select id="wall_condition_id" name="wall_condition_id">
-                        <option value="">-- Pilih Kondisi --</option>
+                    <select id="wall_condition_id" name="wall_condition_id" class="score-calc-select">
+                        <option value="" data-score="0">-- Pilih Kondisi --</option>
                         @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('wall_condition_id', $house->wall?->condition_id) == $v->id)>
-                                {{ $v->label }}
+                            @php
+                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                            @endphp
+                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('wall_condition_id', $house->wall?->condition_id) == $v->id)>
+                                {{ $v->label }} (Skor: {{ $sc }})
                             </option>
                         @endforeach
                     </select>
@@ -484,11 +525,14 @@
                 {{-- PLAFON --}}
                 <div class="form-field">
                     <label for="ceiling_condition_id">Kondisi Plafon / Langit-langit</label>
-                    <select id="ceiling_condition_id" name="ceiling_condition_id">
-                        <option value="">-- Pilih Kondisi --</option>
+                    <select id="ceiling_condition_id" name="ceiling_condition_id" class="score-calc-select">
+                        <option value="" data-score="0">-- Pilih Kondisi --</option>
                         @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('ceiling_condition_id', $house->ceiling?->condition_id) == $v->id)>
-                                {{ $v->label }}
+                            @php
+                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                            @endphp
+                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('ceiling_condition_id', $house->ceiling?->condition_id) == $v->id)>
+                                {{ $v->label }} (Skor: {{ $sc }})
                             </option>
                         @endforeach
                     </select>
@@ -497,11 +541,14 @@
                 {{-- RANGKA ATAP --}}
                 <div class="form-field">
                     <label for="roof_frame_condition_id">Kondisi Rangka / Kuda-kuda Atap</label>
-                    <select id="roof_frame_condition_id" name="roof_frame_condition_id">
-                        <option value="">-- Pilih Kondisi --</option>
+                    <select id="roof_frame_condition_id" name="roof_frame_condition_id" class="score-calc-select">
+                        <option value="" data-score="0">-- Pilih Kondisi --</option>
                         @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('roof_frame_condition_id', $house->roof?->frame_condition_id) == $v->id)>
-                                {{ $v->label }}
+                            @php
+                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                            @endphp
+                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_frame_condition_id', $house->roof?->frame_condition_id) == $v->id)>
+                                {{ $v->label }} (Skor: {{ $sc }})
                             </option>
                         @endforeach
                     </select>
@@ -522,11 +569,14 @@
 
                 <div class="form-field">
                     <label for="roof_condition_id">Kondisi Penutup Atap</label>
-                    <select id="roof_condition_id" name="roof_condition_id">
-                        <option value="">-- Pilih Kondisi --</option>
+                    <select id="roof_condition_id" name="roof_condition_id" class="score-calc-select">
+                        <option value="" data-score="0">-- Pilih Kondisi --</option>
                         @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('roof_condition_id', $house->roof?->condition_id) == $v->id)>
-                                {{ $v->label }}
+                            @php
+                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                            @endphp
+                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_condition_id', $house->roof?->condition_id) == $v->id)>
+                                {{ $v->label }} (Skor: {{ $sc }})
                             </option>
                         @endforeach
                     </select>
@@ -797,6 +847,49 @@
                 if (!latInput.value || !lngInput.value) {
                     getCurrentLocation(true);
                 }
+
+                // Kalkulasi Skor Otomatis Form Survey
+                const scoreSelects = document.querySelectorAll('.score-calc-select');
+                const scoreDisplay = document.getElementById('form-live-score');
+                const priorityDisplay = document.getElementById('form-live-priority');
+
+                function updateFormScore() {
+                    let total = 0;
+                    let hasStructuralSevere = false;
+
+                    scoreSelects.forEach(select => {
+                        const opt = select.options[select.selectedIndex];
+                        const score = parseInt(opt?.dataset?.score || 0, 10);
+                        total += score;
+
+                        if (['sloof_condition_id', 'column_condition_id', 'beam_condition_id', 'roof_frame_condition_id'].includes(select.id)) {
+                            if (score >= 3) {
+                                hasStructuralSevere = true;
+                            }
+                        }
+                    });
+
+                    if (scoreDisplay) scoreDisplay.textContent = total;
+
+                    if (priorityDisplay) {
+                        if (total >= 12 || hasStructuralSevere) {
+                            priorityDisplay.className = 'badge priority-high';
+                            priorityDisplay.textContent = 'Prioritas Tinggi (Rusak Berat)';
+                        } else if (total >= 6) {
+                            priorityDisplay.className = 'badge priority-medium';
+                            priorityDisplay.textContent = 'Prioritas Sedang (Rusak Sedang)';
+                        } else {
+                            priorityDisplay.className = 'badge priority-low';
+                            priorityDisplay.textContent = 'Prioritas Rendah (Rusak Ringan)';
+                        }
+                    }
+                }
+
+                scoreSelects.forEach(select => {
+                    select.addEventListener('change', updateFormScore);
+                });
+
+                updateFormScore();
             });
 
             function updateCodePreview() {

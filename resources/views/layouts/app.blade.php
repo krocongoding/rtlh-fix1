@@ -20,6 +20,8 @@
     <!-- App CSS -->
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 
+    @stack('head')
+
     {{-- Anti-FOUC: apply dark class before first paint --}}
     <script>if(localStorage.getItem('rtlh-dark-mode')==='1'){document.documentElement.classList.add('dark');}</script>
 </head>

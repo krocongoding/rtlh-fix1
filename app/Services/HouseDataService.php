@@ -114,12 +114,14 @@ class HouseDataService
                 }
             }
 
+            // Sinkronkan penilaian skor otomatis dari data survey fisik
+            $assessmentService = app(HouseAssessmentService::class);
+            $assessment = $assessmentService->syncAssessment($house, $userId, $assessmentNotes);
+
             if ($submit) {
-                $assessment = $house->assessments()->firstOrCreate(
-                    ['assessment_year' => $house->survey_year],
-                    ['assessment_date' => now(), 'assessor_id' => $userId, 'status' => 'submitted', 'notes' => $assessmentNotes]
-                );
-                $assessment->update(['assessment_date' => now(), 'assessor_id' => $userId, 'status' => 'submitted', 'notes' => $assessmentNotes]);
+                $assessment->update([
+                    'status' => 'submitted',
+                ]);
             }
 
             return $house->fresh();

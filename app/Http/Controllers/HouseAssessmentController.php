@@ -6,18 +6,22 @@ use App\Models\House;
 use App\Models\MasterCategory;
 use App\Models\RtlhAssessment;
 use App\Models\RtlhAssessmentItem;
+use App\Services\HouseAssessmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class HouseAssessmentController extends Controller
 {
-    public function edit(House $house)
+    public function edit(House $house, HouseAssessmentService $assessmentService)
     {
         $assessment = RtlhAssessment::with('items')
             ->where('house_id', $house->id)
             ->latest('assessment_year')
             ->latest('id')
             ->first();
+
+        // Hitung skor dari data survey rumah sebagai referensi/default
+        $surveyScoreData = $assessmentService->calculateHouseSurveyScores($house);
 
         $categories = MasterCategory::with([
             'values' => function ($query) {
@@ -32,7 +36,8 @@ class HouseAssessmentController extends Controller
         return view('houses.assessment', compact(
             'house',
             'assessment',
-            'categories'
+            'categories',
+            'surveyScoreData'
         ));
     }
 
@@ -116,6 +121,45 @@ class HouseAssessmentController extends Controller
         ]);
 
         DB::transaction(function () use ($house, $validated) {
+            $computedItemScores = [];
+            $totalScore = 0;
+
+            foreach ($validated['items'] ?? [] as $item) {
+                $val = $item['value'] ?? null;
+                // Hitung skor otomatis untuk setiap item
+                // BAIK = 0, RUSAK RINGAN = 1, RUSAK SEDANG = 2, RUSAK BERAT = 3
+                $itemScore = isset($item['score']) && $item['score'] !== '' && $item['score'] !== null
+                    ? (float)$item['score']
+                    : HouseAssessmentService::getScoreForCodeOrLabel($val);
+
+                $computedItemScores[] = [
+                    'category' => $item['category'],
+                    'item_code' => $item['item_code'],
+                    'value' => $val,
+                    'other_value' => strtoupper($val ?? '') === 'OTHER' ? ($item['other_value'] ?? null) : null,
+                    'score' => $itemScore,
+                    'notes' => $item['notes'] ?? null,
+                ];
+
+                $totalScore += $itemScore;
+            }
+
+            // Gunakan skor yang dikirim atau total skor yang dihitung otomatis
+            $finalScore = ($validated['score'] !== null && $validated['score'] !== '')
+                ? (float)$validated['score']
+                : $totalScore;
+
+            // Prioritas otomatis jika tidak dipilih manual
+            $priority = $validated['priority_level'] ?? null;
+            if (!$priority) {
+                if ($finalScore >= 12) {
+                    $priority = 'tinggi';
+                } elseif ($finalScore >= 6) {
+                    $priority = 'sedang';
+                } else {
+                    $priority = 'rendah';
+                }
+            }
 
             $assessment = RtlhAssessment::updateOrCreate(
                 [
@@ -126,42 +170,29 @@ class HouseAssessmentController extends Controller
                     'assessment_date' => $validated['assessment_date'],
                     'assessor_id' => auth()->id(),
                     'status' => $validated['status'],
-                    'score' => $validated['score'] ?? null,
-                    'priority_level' => $validated['priority_level'] ?? null,
+                    'score' => $finalScore,
+                    'priority_level' => $priority,
                     'notes' => $validated['notes'] ?? null,
                 ]
             );
 
             /*
-             * Karena detail assessment adalah snapshot
-             * dari pilihan saat disimpan, kita replace
-             * item-item assessment ini.
+             * Update detail item assessment
              */
             RtlhAssessmentItem::where(
                 'assessment_id',
                 $assessment->id
             )->delete();
 
-            foreach ($validated['items'] ?? [] as $item) {
-
-                $value = $item['value'] ?? null;
-
-                /*
-                 * other_value hanya disimpan kalau
-                 * pilihan yang dipilih adalah OTHER.
-                 */
-                $otherValue = strtoupper($value ?? '') === 'OTHER'
-                    ? ($item['other_value'] ?? null)
-                    : null;
-
+            foreach ($computedItemScores as $itemData) {
                 RtlhAssessmentItem::create([
                     'assessment_id' => $assessment->id,
-                    'category' => $item['category'],
-                    'item_code' => $item['item_code'],
-                    'value' => $value,
-                    'other_value' => $otherValue,
-                    'score' => $item['score'] ?? null,
-                    'notes' => $item['notes'] ?? null,
+                    'category' => $itemData['category'],
+                    'item_code' => $itemData['item_code'],
+                    'value' => $itemData['value'],
+                    'other_value' => $itemData['other_value'],
+                    'score' => $itemData['score'],
+                    'notes' => $itemData['notes'],
                 ]);
             }
         });
@@ -170,8 +201,7 @@ class HouseAssessmentController extends Controller
             ->route('houses.show', $house)
             ->with(
                 'success',
-                'Assessment RTLH berhasil disimpan.'
+                'Assessment RTLH & Penilaian Skor Otomatis berhasil disimpan.'
             );
     }
 }
-
