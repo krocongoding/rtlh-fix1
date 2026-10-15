@@ -50,6 +50,14 @@ class HouseConditionController extends Controller
             ->orderBy('sort_order')
             ->get() : collect();
 
+        $roofFrameMaterial = MasterCategory::where('code', 'ROOF_FRAME_MATERIAL')
+            ->first();
+
+        $roofFrameMaterials = $roofFrameMaterial ? $roofFrameMaterial->values()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get() : collect();
+
         $house->load([
             'structure',
             'floor',
@@ -63,6 +71,7 @@ class HouseConditionController extends Controller
             'foundationTypes',
             'floorMaterials',
             'wallMaterials',
+            'roofFrameMaterials',
             'roofMaterials'
         ));
     }
@@ -103,6 +112,11 @@ class HouseConditionController extends Controller
             ],
 
             'wall_condition_id' => [
+                'nullable',
+                'exists:master_values,id',
+            ],
+
+            'roof_frame_material_id' => [
                 'nullable',
                 'exists:master_values,id',
             ],
@@ -154,6 +168,7 @@ class HouseConditionController extends Controller
             HouseRoof::updateOrCreate(
                 ['house_id' => $house->id],
                 [
+                    'frame_material_id' => $validated['roof_frame_material_id'] ?? null,
                     'frame_condition_id' => $validated['roof_frame_condition_id'] ?? null,
                     'material_id' => $validated['roof_material_id'] ?? null,
                     'condition_id' => $validated['roof_condition_id'] ?? null,

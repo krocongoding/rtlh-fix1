@@ -7,19 +7,37 @@ use Illuminate\Http\Request;
 
 class RegionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $regions = Region::query()
-            ->orderBy('level')
-            ->orderBy('name')
-            ->paginate(20);
+        $query = Region::kotaCirebon()
+            ->whereIn('type', ['village', 'desa'])
+            ->withCount([
+                'houses as total_houses',
+                'houses as realized_count' => function ($q) {
+                    $q->where('realization_status', 'realized');
+                },
+                'houses as not_realized_count' => function ($q) {
+                    $q->where(function ($sq) {
+                        $sq->where('realization_status', '!=', 'realized')
+                            ->orWhereNull('realization_status');
+                    });
+                },
+            ])
+            ->orderBy('name');
+
+        if ($request->filled('search')) {
+            $search = $request->string('search')->toString();
+            $query->where('name', 'ilike', "%{$search}%");
+        }
+
+        $regions = $query->paginate(20)->withQueryString();
 
         return view('regions.index', compact('regions'));
     }
 
     public function create()
     {
-        $parents = Region::query()
+        $parents = Region::kotaCirebon()
             ->orderBy('level')
             ->orderBy('name')
             ->get();

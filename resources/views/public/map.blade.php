@@ -1,4 +1,4 @@
-<x-layouts.app title="Peta WebGIS RTLH">
+<x-layouts.public title="Peta WebGIS RTLH">
 
     @push('head')
         {{-- Leaflet CSS --}}
@@ -167,7 +167,13 @@
     <script>
         let map = null;
         let layer = null;
-        const cirebonCenter = [-6.732, 108.552];
+        const cirebonCenter = [-6.7060, 108.5565];
+
+        // Batas wilayah Kota Cirebon
+        const KOTA_CIREBON_BOUNDS = L.latLngBounds(
+            L.latLng(-6.7500, 108.5350),  // Southwest corner
+            L.latLng(-6.6900, 108.5800)   // Northeast corner
+        );
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -179,12 +185,16 @@
         }
 
         function initMap() {
-            map = L.map('map').setView(cirebonCenter, 11);
+            map = L.map('map', {
+                maxBounds: KOTA_CIREBON_BOUNDS.pad(0.05),
+                maxBoundsViscosity: 1.0,
+                minZoom: 12
+            }).setView(cirebonCenter, 13);
             layer = L.layerGroup().addTo(map);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Kab. Cirebon'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Kota Cirebon'
             }).addTo(map);
 
             setTimeout(() => {
@@ -194,7 +204,7 @@
 
         function fitToCirebon() {
             if (map) {
-                map.setView(cirebonCenter, 11);
+                map.fitBounds(KOTA_CIREBON_BOUNDS, { padding: [20, 20] });
             }
         }
 
@@ -314,7 +324,7 @@
                 if (bounds.length > 0) {
                     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
                 } else {
-                    map.setView(cirebonCenter, 11);
+                    map.fitBounds(KOTA_CIREBON_BOUNDS, { padding: [20, 20] });
                 }
 
                 const total = Number(result.total ?? houses.length);
@@ -346,4 +356,4 @@
         });
     </script>
 
-</x-layouts.app>
+</x-layouts.public>

@@ -51,12 +51,12 @@ class PublicController extends Controller
             ->distinct()
             ->count('survey_year');
 
-        $districtCount = Region::query()
+        $districtCount = Region::kotaCirebon()
             ->where('is_active', true)
             ->where('level', 1)
             ->count();
 
-        $villageCount = Region::query()
+        $villageCount = Region::kotaCirebon()
             ->where('is_active', true)
             ->where('level', 2)
             ->count();
@@ -169,7 +169,7 @@ class PublicController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $regionDistricts = Region::query()
+        $regionDistricts = Region::kotaCirebon()
             ->where('is_active', true)
             ->where('level', 1)
             ->orderBy('name')
@@ -231,7 +231,7 @@ class PublicController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
             ->orderBy('level')
             ->orderBy('name')

@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Region extends Model
 {
+    /**
+     * Kode wilayah Kota Cirebon (BPS).
+     * Digunakan untuk membatasi cakupan data hanya ke Kota Cirebon.
+     */
+    const KOTA_CIREBON_CODE = '32.74';
+
     protected $fillable = [
         'parent_id',
         'code',
@@ -14,6 +20,15 @@ class Region extends Model
         'level',
         'is_active',
     ];
+
+    /**
+     * Scope: hanya region di bawah Kota Cirebon (kecamatan & kelurahan).
+     * Meng-filter berdasarkan kode yang diawali '32.74'.
+     */
+    public function scopeKotaCirebon($query)
+    {
+        return $query->where('code', 'like', self::KOTA_CIREBON_CODE . '.%');
+    }
 
     protected function casts(): array
     {

@@ -21,7 +21,6 @@ This is the application source layer for a Laravel 13 project. `vendor/` is inte
 ## Demo accounts
 admin@cirebon-rtlh.test / password
 surveyor@cirebon-rtlh.test / password
-viewer@cirebon-rtlh.test / password
 
 ## Included in MVP
 - Login/logout + 3 role redirects

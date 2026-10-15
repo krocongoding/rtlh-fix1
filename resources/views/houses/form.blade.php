@@ -3,12 +3,103 @@
     @push('head')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
         <style>
+            .stepper-container {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 24px;
+                background: #ffffff;
+                border: 1px solid var(--slate-200);
+                border-radius: var(--radius-xl);
+                padding: 12px 18px;
+                box-shadow: var(--shadow-sm);
+                gap: 12px;
+                overflow-x: auto;
+            }
+            .stepper-step {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex: 1;
+                cursor: pointer;
+                padding: 8px 12px;
+                border-radius: var(--radius-lg);
+                transition: all 0.2s ease;
+                border: 1px solid transparent;
+                text-decoration: none;
+            }
+            .stepper-step:hover {
+                background: var(--slate-50);
+            }
+            .stepper-step.active {
+                background: #f0fdf4;
+                border-color: #86efac;
+            }
+            .stepper-step.completed {
+                background: #f8fafc;
+            }
+            .stepper-badge {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 800;
+                font-size: 14px;
+                background: var(--slate-100);
+                color: var(--slate-600);
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+            }
+            .stepper-step.active .stepper-badge {
+                background: #16a34a;
+                color: #ffffff;
+                box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+            }
+            .stepper-step.completed .stepper-badge {
+                background: #0284c7;
+                color: #ffffff;
+            }
+            .stepper-title {
+                font-size: 14px;
+                font-weight: 800;
+                color: var(--slate-800);
+                margin: 0;
+                line-height: 1.2;
+            }
+            .stepper-step.active .stepper-title {
+                color: #15803d;
+            }
+            .stepper-subtitle {
+                font-size: 11px;
+                color: var(--slate-500);
+                margin-top: 2px;
+            }
+            .stepper-divider {
+                color: var(--slate-300);
+                font-size: 14px;
+                flex-shrink: 0;
+            }
+
+            .form-step-pane {
+                display: none;
+            }
+            .form-step-pane.active {
+                display: block;
+                animation: fadeInStep 0.25s ease;
+            }
+            @keyframes fadeInStep {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+
             .form-section {
                 background: #ffffff;
                 border: 1px solid var(--slate-200);
                 border-radius: var(--radius-xl);
-                padding: 28px;
-                margin-bottom: 24px;
+                padding: 24px;
+                margin-bottom: 20px;
                 box-shadow: var(--shadow-sm);
                 transition: all 0.2s ease;
             }
@@ -19,7 +110,7 @@
                 display: flex;
                 align-items: center;
                 gap: 14px;
-                margin-bottom: 22px;
+                margin-bottom: 20px;
                 border-bottom: 1px solid var(--slate-100);
                 padding-bottom: 14px;
             }
@@ -41,7 +132,7 @@
             .form-section-badge.rose { background: #ffe4e6; color: #e11d48; }
 
             .form-section-title {
-                font-size: 18px;
+                font-size: 17px;
                 font-weight: 800;
                 color: var(--slate-900);
                 margin: 0;
@@ -107,20 +198,38 @@
                 width: 100%;
             }
 
-            .sticky-form-footer {
-                position: sticky;
-                bottom: 16px;
-                background: rgba(15, 23, 42, 0.95);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
-                border-radius: var(--radius-xl);
-                padding: 16px 24px;
+            .step-navigation-bar {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                box-shadow: var(--shadow-xl);
-                z-index: 100;
+                background: #ffffff;
+                border: 1px solid var(--slate-200);
+                border-radius: var(--radius-xl);
+                padding: 16px 24px;
                 margin-top: 24px;
+                box-shadow: var(--shadow-sm);
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .realization-radio-card {
+                border: 2px solid var(--slate-200);
+                border-radius: var(--radius-lg);
+                padding: 16px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                background: #ffffff;
+            }
+            .realization-radio-card:hover {
+                border-color: var(--slate-400);
+            }
+            .realization-radio-card.active-kuning {
+                border-color: #f59e0b;
+                background: #fffbeb;
+            }
+            .realization-radio-card.active-hijau {
+                border-color: #10b981;
+                background: #f0fdf4;
             }
         </style>
     @endpush
@@ -128,11 +237,11 @@
     <div class="pagehead">
         <div>
             <div class="kicker">
-                <i class="fa-solid fa-file-circle-plus"></i> {{ strtoupper($panel ?? 'FORMULIR') }}
+                <i class="fa-solid fa-file-circle-plus"></i> {{ strtoupper($panel ?? 'FORMULIR') }} &bull; 3 LANGKAH INPUT
             </div>
-            <h1>{{ $house->exists ? 'Edit Data Rumah' : 'Tambah Data RTLH' }}</h1>
+            <h1>{{ $house->exists ? 'Edit Data RTLH' : 'Tambah Data RTLH Baru' }}</h1>
             <p class="muted">
-                Lengkapi seluruh formulir fisik, koordinat geospasial, sanitasi, dan foto dokumentasi lapangan.
+                Formulir bertahap terpadu: Data CPBM, Kondisi Fisik Rumah, dan Sumber Anggaran / Usulan Proposal.
             </p>
         </div>
 
@@ -144,10 +253,10 @@
     </div>
 
     @if ($errors->any())
-        <div class="alert danger" style="border-left:4px solid #b91c1c;">
+        <div class="alert danger" style="border-left:4px solid #b91c1c; margin-bottom:20px;">
             <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
             <div>
-                <strong>Terdapat kesalahan input:</strong>
+                <strong>Terdapat kesalahan input formulir:</strong>
                 <ul style="margin:6px 0 0 16px; font-size:13px;">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -157,187 +266,697 @@
         </div>
     @endif
 
-    <form class="form" enctype="multipart/form-data" method="POST" action="{{ $action }}">
+    @if($house->revision_notes)
+        <div class="alert danger" style="border-left: 5px solid #e11d48; background: #fff1f2; border-color: #fecaca; margin-bottom: 24px; border-radius: var(--radius-lg); padding: 18px 20px;">
+            <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:#ffe4e6; color:#e11d48; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h4 style="font-size:15px; font-weight:800; color:#9f1239; margin:0 0 4px 0;">
+                        Instruksi Catatan Revisi dari Verifikator / Admin:
+                    </h4>
+                    <p style="font-size:13.5px; color:#881337; margin:0; line-height:1.6; white-space:pre-wrap; background:#fff; padding:12px 16px; border-radius:var(--radius-md); border:1px solid #fecaca;">{{ $house->revision_notes }}</p>
+                    <p class="muted" style="font-size:12px; color:#be123c; margin:8px 0 0 0;">
+                        <i class="fa-solid fa-circle-info"></i> Mohon periksa dan perbaiki isian data formulir atau foto sesuai poin catatan di atas, kemudian tekan <strong>"Simpan & Kirim Verifikasi"</strong> di langkah ke-3.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- 3-STEP WIZARD PROGRESS BAR --}}
+    <div class="stepper-container" id="stepper-container">
+        <div class="stepper-step active" id="step-tab-1" onclick="switchStep(1)">
+            <div class="stepper-badge" id="step-badge-1">1</div>
+            <div>
+                <div class="stepper-title">Data CPBM</div>
+                <div class="stepper-subtitle">Calon Penerima Bantuan</div>
+            </div>
+        </div>
+
+        <i class="fa-solid fa-chevron-right stepper-divider"></i>
+
+        <div class="stepper-step" id="step-tab-2" onclick="switchStep(2)">
+            <div class="stepper-badge" id="step-badge-2">2</div>
+            <div>
+                <div class="stepper-title">Data Rumah</div>
+                <div class="stepper-subtitle">Fisik, Sanitasi & Lapangan</div>
+            </div>
+        </div>
+
+        <i class="fa-solid fa-chevron-right stepper-divider"></i>
+
+        <div class="stepper-step" id="step-tab-3" onclick="switchStep(3)">
+            <div class="stepper-badge" id="step-badge-3">3</div>
+            <div>
+                <div class="stepper-title">Anggaran & Usulan</div>
+                <div class="stepper-subtitle">Sumber Dana & Proposal</div>
+            </div>
+        </div>
+    </div>
+
+    <form class="form" id="rtlh-form" enctype="multipart/form-data" method="POST" action="{{ $action }}">
         @csrf
         @if($method !== 'POST')
             @method($method)
         @endif
 
-        {{-- SECTION 1: IDENTITAS & LOKASI GEOSPASIAL --}}
-        <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge emerald">
-                    1
-                </div>
-                <div>
-                    <h3 class="form-section-title">Identitas Rumah & Lokasi Geospasial</h3>
-                    <p class="form-section-desc">Kode unik, wilayah administratif, dimensi rumah, dan titik koordinat GPS lapangan.</p>
-                </div>
-            </div>
-
-            <div class="grid3">
-                <div class="form-field">
-                    <label for="house_code">Kode RTLH (dibuat otomatis)</label>
-                    <input
-                        type="text"
-                        id="house_code"
-                        name="house_code"
-                        value="{{ old('house_code', $house->house_code) }}"
-                        placeholder="Pilih wilayah untuk melihat format kode"
-                        readonly
-                    >
-                    <small class="muted" id="house-code-help">Kode dibuat oleh sistem berdasarkan desa/kelurahan dan nomor urut, sehingga tidak dapat sama.</small>
-                </div>
-
-                <div class="form-field">
-                    <label for="survey_year">Tahun Survei <span class="req">*</span></label>
-                    <input
-                        type="number"
-                        id="survey_year"
-                        name="survey_year"
-                        value="{{ old('survey_year', $house->survey_year ?: date('Y')) }}"
-                        min="2000"
-                        max="2100"
-                        required
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="region_id">Wilayah Administratif <span class="req">*</span></label>
-                    <select id="region_id" name="region_id" required>
-                        <option value="">-- Pilih Wilayah --</option>
-                        @foreach($regions as $r)
-                            <option value="{{ $r->id }}" data-region-name="{{ $r->name }}" @selected(old('region_id', $house->region_id) == $r->id)>
-                                {{ $r->name }} ({{ ucfirst($r->type ?? 'Desa') }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div class="grid4">
-                <div class="form-field">
-                    <label for="area_m2">Luas Rumah (m²)</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        id="area_m2"
-                        name="area_m2"
-                        value="{{ old('area_m2', $house->area_m2) }}"
-                        placeholder="Contoh: 36.5"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="block">Dusun / Blok</label>
-                    <input
-                        type="text"
-                        id="block"
-                        name="block"
-                        value="{{ old('block', $house->block) }}"
-                        placeholder="Contoh: Blok Wage"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="rt">Nomor RT</label>
-                    <input
-                        type="text"
-                        id="rt"
-                        name="rt"
-                        value="{{ old('rt', $house->rt) }}"
-                        placeholder="001"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="rw">Nomor RW</label>
-                    <input
-                        type="text"
-                        id="rw"
-                        name="rw"
-                        value="{{ old('rw', $house->rw) }}"
-                        placeholder="002"
-                    >
-                </div>
-            </div>
-
-            <div class="grid2">
-                <div class="form-field">
-                    <label for="occupant_count">Jumlah Penghuni (Jiwa)</label>
-                    <input
-                        type="number"
-                        min="0"
-                        id="occupant_count"
-                        name="occupant_count"
-                        value="{{ old('occupant_count', $house->occupant_count) }}"
-                        placeholder="Contoh: 4"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="household_count">Jumlah KK (Kepala Keluarga)</label>
-                    <input
-                        type="number"
-                        min="0"
-                        id="household_count"
-                        name="household_count"
-                        value="{{ old('household_count', $house->household_count ?: 1) }}"
-                        placeholder="Contoh: 1"
-                    >
-                </div>
-            </div>
-
-            <div class="form-field">
-                <label for="address">Alamat Lengkap Rumah</label>
-                <textarea
-                    id="address"
-                    name="address"
-                    rows="2"
-                    placeholder="Tuliskan nama jalan, patokan, atau rincian lokasi..."
-                >{{ old('address', $house->address) }}</textarea>
-            </div>
-
-            <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-lg); padding:20px; margin-top:8px;">
-                <div style="margin-bottom:14px;">
-                    <strong style="font-size:14px; color:var(--slate-800);"><i class="fa-solid fa-id-card" style="color:#0284c7;"></i> Informasi Administratif & Kepemilikan</strong>
-                    <div class="muted" style="font-size:12px;">Isi sesuai kondisi saat survei. Data ini akan tampil sebagai ringkasan pada halaman viewer.</div>
-                </div>
-                <div class="grid2">
-                    @foreach([
-                        ['settlement_condition_id', 'Kondisi Kawasan Permukiman', 'Pilih apakah lingkungan tempat rumah berada kumuh atau tidak kumuh.', 'SETTLEMENT_CONDITION'],
-                        ['room_function_id', 'Fungsi Bangunan / Ruang Utama', 'Pilih fungsi utama bangunan yang ditempati.', 'ROOM_FUNCTION'],
-                        ['ownership_status_id', 'Status Penguasaan Rumah', 'Contoh: milik sendiri, sewa/kontrak, atau lainnya.', 'OWNERSHIP_STATUS'],
-                        ['land_status_id', 'Status Penguasaan Tanah', 'Contoh: milik sendiri atau status lainnya.', 'LAND_STATUS'],
-                    ] as [$field, $label, $help, $category])
-                        <div class="form-field" style="margin-bottom:0;">
-                            <label for="{{ $field }}">{{ $label }}</label>
-                            <select id="{{ $field }}" name="{{ $field }}">
-                                <option value="">-- Belum diisi --</option>
-                                @foreach(($cats[$category]->values ?? []) as $value)
-                                    <option value="{{ $value->id }}" @selected(old($field, $house->{$field}) == $value->id)>{{ $value->label }}</option>
-                                @endforeach
-                            </select>
-                            <small class="muted" style="margin-top:5px;">{{ $help }}</small>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- TITIK KOORDINAT GPS --}}
-            <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-lg); padding:20px; margin-top:8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
-                    <div>
-                        <strong style="font-size:14px; color:var(--slate-800);"><i class="fa-solid fa-location-dot text-emerald-600" style="color:#059669;"></i> Koordinat GPS Lapangan (WGS84)</strong>
-                        <div class="muted" id="gps-status" style="font-size:12px;">Lokasi GPS akan diambil otomatis saat formulir dibuka. Pin peta tetap dapat digeser bila perlu.</div>
+        {{-- ========================================================================= --}}
+        {{-- STEP 1: DATA CPBM (CALON PENERIMA BANTUAN MANFAAT) --}}
+        {{-- ========================================================================= --}}
+        <div class="form-step-pane active" id="pane-step-1">
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge emerald">
+                        <i class="fa-solid fa-user-check"></i>
                     </div>
-                    <button type="button" class="btn small" onclick="getCurrentLocation()" style="background:#fff;">
-                        <i class="fa-solid fa-crosshairs text-emerald-600" style="color:#059669;"></i> Dapatkan GPS Saya Otomatis
+                    <div>
+                        <h3 class="form-section-title">Langkah 1: Identitas Calon Penerima Bantuan Manfaat (CPBM)</h3>
+                        <p class="form-section-desc">Identitas kependudukan kepala keluarga dan alamat domisili desa calon penerima manfaat.</p>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    <div class="form-field">
+                        <label for="nik">Nomor Induk Kependudukan (NIK) <span class="req">*</span></label>
+                        <input
+                            type="text"
+                            id="nik"
+                            name="nik"
+                            value="{{ old('nik', $house->nik) }}"
+                            placeholder="Contoh: 320914XXXXXXXXXX (16 digit)"
+                            maxlength="20"
+                            required
+                        >
+                        <small class="muted">NIK kepala keluarga calon penerima manfaat.</small>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="head_of_household_name">Nama Kepala Keluarga (KK) <span class="req">*</span></label>
+                        <input
+                            type="text"
+                            id="head_of_household_name"
+                            name="head_of_household_name"
+                            value="{{ old('head_of_household_name', $house->head_of_household_name) }}"
+                            placeholder="Nama lengkap sesuai KTP / KK"
+                            required
+                        >
+                        <small class="muted">Nama kepala keluarga yang berhak menerima bantuan.</small>
+                    </div>
+                </div>
+
+                <div class="grid3">
+                    <div class="form-field" style="grid-column: span 2;">
+                        <label for="address">Alamat Jalan / Gang</label>
+                        <input
+                            type="text"
+                            id="address"
+                            name="address"
+                            value="{{ old('address', $house->address) }}"
+                            placeholder="Contoh: Jl. Pangeran Sutajaya No. 12"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="block">Dusun / Blok</label>
+                        <input
+                            type="text"
+                            id="block"
+                            name="block"
+                            value="{{ old('block', $house->block) }}"
+                            placeholder="Contoh: Blok Manis / Blok Wage"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid3">
+                    <div class="form-field">
+                        <label for="rt">Nomor RT</label>
+                        <input
+                            type="text"
+                            id="rt"
+                            name="rt"
+                            value="{{ old('rt', $house->rt) }}"
+                            placeholder="Contoh: 001"
+                            maxlength="10"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="rw">Nomor RW</label>
+                        <input
+                            type="text"
+                            id="rw"
+                            name="rw"
+                            value="{{ old('rw', $house->rw) }}"
+                            placeholder="Contoh: 002"
+                            maxlength="10"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="region_id">Wilayah Administratif (Kelurahan) <span class="req">*</span></label>
+                        <select id="region_id" name="region_id" required>
+                            <option value="">-- Pilih Kelurahan --</option>
+                            @foreach($regions as $r)
+                                <option value="{{ $r->id }}" data-region-name="{{ $r->name }}" @selected(old('region_id', $house->region_id) == $r->id)>
+                                    Kelurahan {{ $r->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Cakupan wilayah dibatasi khusus tingkat Kelurahan di Kota Cirebon.</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- STEP 1 FOOTER NAVIGATION --}}
+            <div class="step-navigation-bar">
+                <a href="{{ $panel === 'surveyor' ? route('surveyor.rtlh.index') : route('houses.index') }}" class="btn" style="background:#fff; border-color:var(--slate-300);">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar
+                </a>
+
+                <button type="button" class="btn primary" onclick="validateAndGoStep(2)">
+                    Lanjut: Data Fisik Rumah (Step 2) <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        {{-- ========================================================================= --}}
+        {{-- STEP 2: DATA FISIK RUMAH, STRUKTUR, SANITASI, GPS & FOTO --}}
+        {{-- ========================================================================= --}}
+        <div class="form-step-pane" id="pane-step-2">
+
+            {{-- SUBSECTION 2A: KARAKTERISTIK UMUM RUMAH & KEPEMILIKAN --}}
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge blue">
+                        <i class="fa-solid fa-house-chimney"></i>
+                    </div>
+                    <div>
+                        <h3 class="form-section-title">Karakteristik & Status Kepemilikan Hunian</h3>
+                        <p class="form-section-desc">Dimensi bangunan, penghuni, tahun survei, status penguasaan rumah dan tanah.</p>
+                    </div>
+                </div>
+
+                <div class="grid4">
+                    <div class="form-field">
+                        <label for="house_code">Kode RTLH</label>
+                        <input
+                            type="text"
+                            id="house_code"
+                            name="house_code"
+                            value="{{ old('house_code', $house->house_code) }}"
+                            placeholder="Otomatis dari sistem"
+                            readonly
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="survey_year">Tahun Survei <span class="req">*</span></label>
+                        <input
+                            type="number"
+                            id="survey_year"
+                            name="survey_year"
+                            value="{{ old('survey_year', $house->survey_year ?: date('Y')) }}"
+                            min="2000"
+                            max="2100"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="area_m2">Luas Rumah (m²)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            id="area_m2"
+                            name="area_m2"
+                            value="{{ old('area_m2', $house->area_m2) }}"
+                            placeholder="Contoh: 36.0"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="occupant_count">Jumlah Penghuni (Jiwa)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            id="occupant_count"
+                            name="occupant_count"
+                            value="{{ old('occupant_count', $house->occupant_count) }}"
+                            placeholder="Contoh: 4"
+                        >
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    <div class="form-field">
+                        <label for="household_count">Jumlah KK dalam Rumah</label>
+                        <input
+                            type="number"
+                            min="0"
+                            id="household_count"
+                            name="household_count"
+                            value="{{ old('household_count', $house->household_count ?: 1) }}"
+                            placeholder="1"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="settlement_condition_id">Kondisi Kawasan Permukiman</label>
+                        <select id="settlement_condition_id" name="settlement_condition_id">
+                            <option value="">-- Pilih Kondisi Kawasan --</option>
+                            @foreach(($cats['SETTLEMENT_CONDITION']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('settlement_condition_id', $house->settlement_condition_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    {{-- STATUS PENGUASAAN RUMAH: HANYA MILIK SENDIRI --}}
+                    <div class="form-field">
+                        <label for="ownership_status_id">Status Penguasaan Rumah</label>
+                        <select id="ownership_status_id" name="ownership_status_id">
+                            @foreach(($cats['OWNERSHIP_STATUS']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('ownership_status_id', $house->ownership_status_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- STATUS PENGUASAAN TANAH: ORANG TUA, SAUDARA, ANAK --}}
+                    <div class="form-field">
+                        <label for="land_status_id">Status Penguasaan Tanah</label>
+                        <select id="land_status_id" name="land_status_id">
+                            <option value="">-- Pilih Status Penguasaan Tanah --</option>
+                            @foreach(($cats['LAND_STATUS']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('land_status_id', $house->land_status_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Pilihan penguasaan tanah: Orang Tua, Saudara, atau Anak.</small>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SUBSECTION 2B: KONDISI STRUKTUR UTAMA BANGUNAN --}}
+            <div class="form-section">
+                <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div class="form-section-badge blue">
+                            <i class="fa-solid fa-cubes-stacked"></i>
+                        </div>
+                        <div>
+                            <h3 class="form-section-title">Kondisi Struktur Utama Bangunan</h3>
+                            <p class="form-section-desc">Pondasi, sloof, kondisi tiang / kolom, balok, serta rangka atap.</p>
+                        </div>
+                    </div>
+
+                    {{-- LIVE AUTO-SCORE BADGE --}}
+                    <div style="background:var(--slate-50); border:1px solid var(--slate-200); padding:6px 14px; border-radius:var(--radius-lg); display:flex; align-items:center; gap:12px;">
+                        <div style="font-size:11px; font-weight:700; color:var(--slate-600); text-transform:uppercase;">
+                            <i class="fa-solid fa-calculator" style="color:var(--primary-600);"></i> Skor Survei:
+                        </div>
+                        <div style="font-size:18px; font-weight:900; color:var(--primary-700); font-family:monospace;" id="form-live-score">0</div>
+                        <span id="form-live-priority" class="badge priority-low" style="font-size:11px;">Prioritas Rendah</span>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    <div class="form-field">
+                        <label for="foundation">Jenis Pondasi</label>
+                        @php
+                            $currentFoundation = old('foundation', $house->structure?->foundation);
+                            $defaultFoundations = [
+                                'BATU KALI / BATU BELAH',
+                                'BETON BERTULANG / TAPAK',
+                                'BATA MERAH / ROLAG',
+                                'KAYU / CERUCUK',
+                                'BAMBU',
+                                'TANPA PONDASI / MENUMPANG TANAH',
+                                'LAINNYA',
+                            ];
+                            $foundationValues = isset($cats['FOUNDATION_TYPE']) && $cats['FOUNDATION_TYPE']->values->isNotEmpty()
+                                ? $cats['FOUNDATION_TYPE']->values->pluck('label')->toArray()
+                                : $defaultFoundations;
+                        @endphp
+                        <select id="foundation" name="foundation">
+                            <option value="">-- Pilih Jenis Pondasi --</option>
+                            @foreach($foundationValues as $opt)
+                                <option value="{{ $opt }}" @selected(strtoupper(trim((string)$currentFoundation)) === strtoupper(trim($opt)))>
+                                    {{ $opt }}
+                                </option>
+                            @endforeach
+                            @if($currentFoundation && !in_array(strtoupper(trim($currentFoundation)), array_map('strtoupper', array_map('trim', $foundationValues))))
+                                <option value="{{ $currentFoundation }}" selected>{{ $currentFoundation }}</option>
+                            @endif
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="sloof_condition_id">Kondisi Sloof / Balok Dasar</label>
+                        <select id="sloof_condition_id" name="sloof_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Sloof --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('sloof_condition_id', $house->structure?->sloof_condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    {{-- KONDISI TIANG / KOLOM --}}
+                    <div class="form-field">
+                        <label for="column_condition_id">
+                            <i class="fa-solid fa-arrows-up-down" style="color:#0284c7;"></i>
+                            Kondisi Tiang / Kolom Penopang
+                        </label>
+                        <select id="column_condition_id" name="column_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Tiang --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('column_condition_id', $house->structure?->column_condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Kondisi fisik tiang penopang / kolom struktur utama.</small>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="beam_condition_id">Kondisi Balok Pengikat</label>
+                        <select id="beam_condition_id" name="beam_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Balok --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('beam_condition_id', $house->structure?->beam_condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                {{-- RANGKA ATAP (KAYU / METAL & KONDISI) --}}
+                <div class="grid2" style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-lg); padding:16px; margin-top:8px;">
+                    <div class="form-field" style="margin-bottom:0;">
+                        <label for="roof_frame_material_id">
+                            <i class="fa-solid fa-shapes" style="color:#16a34a;"></i>
+                            Bahan Rangka Atap (Kayu / Metal)
+                        </label>
+                        <select id="roof_frame_material_id" name="roof_frame_material_id">
+                            <option value="">-- Pilih Bahan Rangka Atap --</option>
+                            @foreach(($cats['ROOF_FRAME_MATERIAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('roof_frame_material_id', $house->roof?->frame_material_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Pilihan rangka atap: Kayu atau Metal / Baja Ringan.</small>
+                    </div>
+
+                    <div class="form-field" style="margin-bottom:0;">
+                        <label for="roof_frame_condition_id">Kondisi Rangka Atap</label>
+                        <select id="roof_frame_condition_id" name="roof_frame_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Rangka --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_frame_condition_id', $house->roof?->frame_condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SUBSECTION 2C: KOMPONEN ARSITEKTUR (LANTAI, DINDING, PLAFON, PENUTUP ATAP) --}}
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge purple">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <div>
+                        <h3 class="form-section-title">Komponen Arsitektur Hunian</h3>
+                        <p class="form-section-desc">Material dan kondisi fisik penutup lantai, dinding, penutup atap, dan plafon.</p>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    <div class="form-field">
+                        <label for="floor_material_id">Bahan Material Lantai</label>
+                        <select id="floor_material_id" name="floor_material_id">
+                            <option value="">-- Pilih Material Lantai --</option>
+                            @foreach(($cats['FLOOR_MATERIAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('floor_material_id', $house->floor?->material_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="floor_condition_id">Kondisi Lantai</label>
+                        <select id="floor_condition_id" name="floor_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Lantai --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('floor_condition_id', $house->floor?->condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="wall_material_id">Bahan Material Dinding</label>
+                        <select id="wall_material_id" name="wall_material_id">
+                            <option value="">-- Pilih Material Dinding --</option>
+                            @foreach(($cats['WALL_MATERIAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('wall_material_id', $house->wall?->material_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="wall_condition_id">Kondisi Dinding</label>
+                        <select id="wall_condition_id" name="wall_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Dinding --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('wall_condition_id', $house->wall?->condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="roof_material_id">Bahan Penutup Atap</label>
+                        <select id="roof_material_id" name="roof_material_id">
+                            <option value="">-- Pilih Penutup Atap --</option>
+                            @foreach(($cats['ROOF_MATERIAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('roof_material_id', $house->roof?->material_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="roof_condition_id">Kondisi Penutup Atap</label>
+                        <select id="roof_condition_id" name="roof_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Penutup Atap --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_condition_id', $house->roof?->condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field" style="grid-column: span 2;">
+                        <label for="ceiling_condition_id">Kondisi Plafon / Langit-langit</label>
+                        <select id="ceiling_condition_id" name="ceiling_condition_id" class="score-calc-select">
+                            <option value="" data-score="0">-- Pilih Kondisi Plafon --</option>
+                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
+                                @php
+                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
+                                @endphp
+                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('ceiling_condition_id', $house->ceiling?->condition_id) == $v->id)>
+                                    {{ $v->label }} (Skor: {{ $sc }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SUBSECTION 2D: SANITASI & UTILITAS --}}
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge amber">
+                        <i class="fa-solid fa-faucet-detergent"></i>
+                    </div>
+                    <div>
+                        <h3 class="form-section-title">Pencahayaan, Air & Sanitasi Lingkungan</h3>
+                        <p class="form-section-desc">Ketersediaan air minum bersih, sanitasi air kotor, jamban, ventilasi dan penerangan.</p>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    {{-- AIR MINUM (TERMASUK 'BELUM ADA') --}}
+                    <div class="form-field">
+                        <label for="water_source_id">
+                            <i class="fa-solid fa-droplet" style="color:#0284c7;"></i>
+                            Sumber Air Minum
+                        </label>
+                        <select id="water_source_id" name="water_source_id">
+                            <option value="">-- Pilih Sumber Air Minum --</option>
+                            @foreach(($cats['WATER_SOURCE']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('water_source_id', $house->sanitation?->water_source_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Tersedia pilihan sumber air PDAM, Sumur, Lainnya, maupun <strong>Belum Ada</strong>.</small>
+                    </div>
+
+                    {{-- SANITASI AIR KOTOR (AIR KALI, SUNGAI) --}}
+                    <div class="form-field">
+                        <label for="wastewater_disposal_id">
+                            <i class="fa-solid fa-water" style="color:#d97706;"></i>
+                            Sanitasi Air Kotor
+                        </label>
+                        <select id="wastewater_disposal_id" name="wastewater_disposal_id">
+                            <option value="">-- Pilih Sanitasi Air Kotor --</option>
+                            @foreach(($cats['WASTEWATER_DISPOSAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('wastewater_disposal_id', $house->sanitation?->wastewater_disposal_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="muted">Pembuangan sanitasi air kotor rumah tangga: Air Kali atau Sungai.</small>
+                    </div>
+                </div>
+
+                <div class="grid3">
+                    <div class="form-field">
+                        <label for="toilet_available">Ketersediaan Jamban / KM</label>
+                        <select id="toilet_available" name="toilet_available">
+                            <option value="">-- Pilih Ketersediaan --</option>
+                            <option value="1" @selected(old('toilet_available', is_null($house->sanitation?->toilet_available) ? '' : (int)$house->sanitation?->toilet_available) === 1)>ADA / MILIK SENDIRI</option>
+                            <option value="0" @selected(old('toilet_available', is_null($house->sanitation?->toilet_available) ? '' : (int)$house->sanitation?->toilet_available) === 0)>TIDAK PUNYA / MENUMPANG</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="toilet_type_id">Jenis Jamban</label>
+                        <select id="toilet_type_id" name="toilet_type_id">
+                            <option value="">-- Pilih Jenis --</option>
+                            @foreach(($cats['TOILET_TYPE']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('toilet_type_id', $house->sanitation?->toilet_type_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="fecal_disposal_type_id">TPA Tinja (Tempat Pembuangan Akhir)</label>
+                        <select id="fecal_disposal_type_id" name="fecal_disposal_type_id">
+                            <option value="">-- Pilih TPA Tinja --</option>
+                            @foreach(($cats['FECAL_DISPOSAL']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('fecal_disposal_type_id', $house->sanitation?->fecal_disposal_type_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid3">
+                    <div class="form-field">
+                        <label for="water_fecal_distance">Jarak Air ke Pembuangan</label>
+                        <input
+                            type="text"
+                            id="water_fecal_distance"
+                            name="water_fecal_distance"
+                            value="{{ old('water_fecal_distance', $house->sanitation?->water_fecal_distance) }}"
+                            placeholder="Contoh: < 10 meter / > 10 meter"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="light_opening">Bukaan Cahaya / Jendela</label>
+                        <input
+                            type="text"
+                            id="light_opening"
+                            name="light_opening"
+                            value="{{ old('light_opening', $house->utility?->light_opening) }}"
+                            placeholder="Contoh: Cukup / Kurang"
+                        >
+                    </div>
+
+                    <div class="form-field">
+                        <label for="lighting_source_id">Penerangan / Listrik</label>
+                        <select id="lighting_source_id" name="lighting_source_id">
+                            <option value="">-- Pilih Sumber Listrik --</option>
+                            @foreach(($cats['LIGHTING_SOURCE']->values ?? []) as $v)
+                                <option value="{{ $v->id }}" @selected(old('lighting_source_id', $house->utility?->lighting_source_id) == $v->id)>
+                                    {{ $v->label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {{-- SUBSECTION 2E: TITIK KOORDINAT GPS LAPANGAN --}}
+            <div class="form-section">
+                <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div class="form-section-badge emerald">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </div>
+                        <div>
+                            <h3 class="form-section-title">Koordinat Geospasial Lapangan (WGS84)</h3>
+                            <p class="form-section-desc" id="gps-status">Ambil titik GPS otomatis menggunakan perangkat Anda atau sesuaikan pin marker.</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn small" onclick="getCurrentLocation()" style="background:#fff; border-color:var(--slate-300);">
+                        <i class="fa-solid fa-crosshairs text-emerald-600" style="color:#059669;"></i> Ambil Titik GPS Saya
                     </button>
                 </div>
 
                 <div class="grid2">
-                    <div class="form-field" style="margin-bottom:0;">
+                    <div class="form-field">
                         <label for="latitude">Latitude</label>
                         <input
                             type="number"
@@ -350,7 +969,7 @@
                         >
                     </div>
 
-                    <div class="form-field" style="margin-bottom:0;">
+                    <div class="form-field">
                         <label for="longitude">Longitude</label>
                         <input
                             type="number"
@@ -364,440 +983,303 @@
                     </div>
                 </div>
 
-                {{-- INTERACTIVE MAP PICKER --}}
-                <div style="margin-top:14px;">
-                    <div style="font-size:12px; font-weight:700; color:var(--slate-700); margin-bottom:6px;">
-                        <i class="fa-solid fa-map-pin"></i> Peta Lokasi (Klik atau geser pin penanda pada peta):
-                    </div>
+                <div style="margin-top:10px;">
                     <div id="form-map" style="height:240px; width:100%; border-radius:8px; border:1px solid var(--slate-300); z-index:1;"></div>
                 </div>
             </div>
-        </div>
 
-        {{-- SECTION 2: KONDISI STRUKTUR --}}
-        <div class="form-section">
-            <div class="form-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <div class="form-section-badge blue">
-                        2
+            {{-- SUBSECTION 2F: DOKUMENTASI FOTO FISIK --}}
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge rose">
+                        <i class="fa-solid fa-camera"></i>
                     </div>
                     <div>
-                        <h3 class="form-section-title">Kondisi Struktur Utama Bangunan</h3>
-                        <p class="form-section-desc">Pondasi dasar, sloof pengikat, kolom struktural, dan balok penopang.</p>
+                        <h3 class="form-section-title">Dokumentasi Foto Fisik Lapangan</h3>
+                        <p class="form-section-desc">Unggah foto dokumentasi kondisi fisik rumah dari berbagai sudut.</p>
                     </div>
                 </div>
 
-                {{-- LIVE AUTO-SCORE BADGE --}}
-                <div style="background:var(--slate-50); border:1px solid var(--slate-200); padding:6px 14px; border-radius:var(--radius-lg); display:flex; align-items:center; gap:12px;">
-                    <div style="font-size:11px; font-weight:700; color:var(--slate-600); text-transform:uppercase;">
-                        <i class="fa-solid fa-calculator" style="color:var(--primary-600);"></i> Skor Otomatis Survei:
-                    </div>
-                    <div style="font-size:18px; font-weight:900; color:var(--primary-700); font-family:monospace;" id="form-live-score">0</div>
-                    <span id="form-live-priority" class="badge priority-low" style="font-size:11px;">Prioritas Rendah</span>
-                </div>
-            </div>
+                @php
+                    $typeMap = [
+                        'photo_front' => 'front',
+                        'photo_angle' => 'angle_45',
+                        'photo_side' => 'side',
+                        'photo_back' => 'back',
+                        'photo_family_room' => 'family_room',
+                        'photo_bathroom' => 'bathroom',
+                    ];
+                @endphp
 
-            <div class="grid2">
-                <div class="form-field">
-                    <label for="foundation">Jenis Pondasi</label>
-                    @php
-                        $currentFoundation = old('foundation', $house->structure?->foundation);
-                        $defaultFoundations = [
-                            'BATU KALI / BATU BELAH',
-                            'BETON BERTULANG / TAPAK',
-                            'BATA MERAH / ROLAG',
-                            'KAYU / CERUCUK',
-                            'BAMBU',
-                            'TANPA PONDASI / MENUMPANG TANAH',
-                            'LAINNYA',
-                        ];
-                        $foundationValues = isset($cats['FOUNDATION_TYPE']) && $cats['FOUNDATION_TYPE']->values->isNotEmpty()
-                            ? $cats['FOUNDATION_TYPE']->values->pluck('label')->toArray()
-                            : $defaultFoundations;
-                    @endphp
-                    <select id="foundation" name="foundation">
-                        <option value="">-- Pilih Jenis Pondasi --</option>
-                        @foreach($foundationValues as $opt)
-                            <option value="{{ $opt }}" @selected(strtoupper(trim((string)$currentFoundation)) === strtoupper(trim($opt)))>
-                                {{ $opt }}
-                            </option>
-                        @endforeach
-                        @if($currentFoundation && !in_array(strtoupper(trim($currentFoundation)), array_map('strtoupper', array_map('trim', $foundationValues))))
-                            <option value="{{ $currentFoundation }}" selected>
-                                {{ $currentFoundation }}
-                            </option>
-                        @endif
-                    </select>
-                </div>
+                <div class="photo-upload-grid">
+                    @foreach([
+                        ['photo_front', 'Tampak Depan', 'fa-camera'],
+                        ['photo_angle', 'Tampak Sudut 45°', 'fa-camera'],
+                        ['photo_side', 'Tampak Samping', 'fa-camera'],
+                        ['photo_back', 'Tampak Belakang', 'fa-camera'],
+                        ['photo_family_room', 'Ruang Dalam / Keluarga', 'fa-couch'],
+                        ['photo_bathroom', 'Kamar Mandi / Sanitasi', 'fa-bath']
+                    ] as [$field, $label, $icon])
+                        @php
+                            $photoType = $typeMap[$field] ?? '';
+                            $existingPhoto = $house->photos ? $house->photos->where('type', $photoType)->first() : null;
+                            $existingUrl = $existingPhoto ? asset('storage/' . $existingPhoto->path) : null;
+                        @endphp
 
-                @foreach([
-                    ['sloof_condition_id', 'Kondisi Sloof / Balok Dasar', 'structure'],
-                    ['column_condition_id', 'Kondisi Kolom / Tiang Penopang', 'structure'],
-                    ['beam_condition_id', 'Kondisi Balok Pengikat', 'structure']
-                ] as [$field, $label, $rel])
-                    <div class="form-field">
-                        <label for="{{ $field }}">{{ $label }}</label>
-                        <select id="{{ $field }}" name="{{ $field }}" class="score-calc-select">
-                            <option value="" data-score="0">-- Pilih Kondisi --</option>
-                            @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                                @php
-                                    $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                                @endphp
-                                <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old($field, $house->{$rel}?->{$field}) == $v->id)>
-                                    {{ $v->label }} (Skor: {{ $sc }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- SECTION 3: KOMPONEN ARSITEKTUR --}}
-        <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge purple">
-                    3
-                </div>
-                <div>
-                    <h3 class="form-section-title">Komponen Arsitektur (Lantai, Dinding, Plafon, Atap)</h3>
-                    <p class="form-section-desc">Material dan tingkat kerusakan komponen penutup dan pembatas bangunan.</p>
-                </div>
-            </div>
-
-            <div class="grid2">
-                {{-- LANTAI --}}
-                <div class="form-field">
-                    <label for="floor_material_id">Bahan Material Lantai</label>
-                    <select id="floor_material_id" name="floor_material_id">
-                        <option value="">-- Pilih Material --</option>
-                        @foreach(($cats['FLOOR_MATERIAL']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('floor_material_id', $house->floor?->material_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="floor_condition_id">Kondisi Lantai</label>
-                    <select id="floor_condition_id" name="floor_condition_id" class="score-calc-select">
-                        <option value="" data-score="0">-- Pilih Kondisi --</option>
-                        @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            @php
-                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                            @endphp
-                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('floor_condition_id', $house->floor?->condition_id) == $v->id)>
-                                {{ $v->label }} (Skor: {{ $sc }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- DINDING --}}
-                <div class="form-field">
-                    <label for="wall_material_id">Bahan Material Dinding</label>
-                    <select id="wall_material_id" name="wall_material_id">
-                        <option value="">-- Pilih Material --</option>
-                        @foreach(($cats['WALL_MATERIAL']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('wall_material_id', $house->wall?->material_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="wall_condition_id">Kondisi Dinding</label>
-                    <select id="wall_condition_id" name="wall_condition_id" class="score-calc-select">
-                        <option value="" data-score="0">-- Pilih Kondisi --</option>
-                        @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            @php
-                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                            @endphp
-                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('wall_condition_id', $house->wall?->condition_id) == $v->id)>
-                                {{ $v->label }} (Skor: {{ $sc }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- PLAFON --}}
-                <div class="form-field">
-                    <label for="ceiling_condition_id">Kondisi Plafon / Langit-langit</label>
-                    <select id="ceiling_condition_id" name="ceiling_condition_id" class="score-calc-select">
-                        <option value="" data-score="0">-- Pilih Kondisi --</option>
-                        @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            @php
-                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                            @endphp
-                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('ceiling_condition_id', $house->ceiling?->condition_id) == $v->id)>
-                                {{ $v->label }} (Skor: {{ $sc }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- RANGKA ATAP --}}
-                <div class="form-field">
-                    <label for="roof_frame_condition_id">Kondisi Rangka / Kuda-kuda Atap</label>
-                    <select id="roof_frame_condition_id" name="roof_frame_condition_id" class="score-calc-select">
-                        <option value="" data-score="0">-- Pilih Kondisi --</option>
-                        @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            @php
-                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                            @endphp
-                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_frame_condition_id', $house->roof?->frame_condition_id) == $v->id)>
-                                {{ $v->label }} (Skor: {{ $sc }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                {{-- PENUTUP ATAP --}}
-                <div class="form-field">
-                    <label for="roof_material_id">Bahan Penutup Atap</label>
-                    <select id="roof_material_id" name="roof_material_id">
-                        <option value="">-- Pilih Material --</option>
-                        @foreach(($cats['ROOF_MATERIAL']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('roof_material_id', $house->roof?->material_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="roof_condition_id">Kondisi Penutup Atap</label>
-                    <select id="roof_condition_id" name="roof_condition_id" class="score-calc-select">
-                        <option value="" data-score="0">-- Pilih Kondisi --</option>
-                        @foreach(($cats['HOUSE_CONDITION']->values ?? []) as $v)
-                            @php
-                                $sc = \App\Services\HouseAssessmentService::getScoreForCodeOrLabel($v->code, $v->label, $v->sort_order);
-                            @endphp
-                            <option value="{{ $v->id }}" data-score="{{ $sc }}" @selected(old('roof_condition_id', $house->roof?->condition_id) == $v->id)>
-                                {{ $v->label }} (Skor: {{ $sc }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        {{-- SECTION 4: SANITASI & UTILITAS --}}
-        <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge amber">
-                    4
-                </div>
-                <div>
-                    <h3 class="form-section-title">Pencahayaan, Ventilasi, Air & Sanitasi</h3>
-                    <p class="form-section-desc">Ketersediaan air minum bersih, fasilitas jamban keluarga, jarak tinja, dan penerangan.</p>
-                </div>
-            </div>
-
-            <div class="grid2">
-                <div class="form-field">
-                    <label for="light_opening">Bukaan Cahaya / Jendela</label>
-                    <input
-                        type="text"
-                        id="light_opening"
-                        name="light_opening"
-                        value="{{ old('light_opening', $house->utility?->light_opening) }}"
-                        placeholder="Contoh: Cukup / Kurang / Tidak Ada"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="ventilation">Ventilasi / Sirkulasi Udara</label>
-                    <input
-                        type="text"
-                        id="ventilation"
-                        name="ventilation"
-                        value="{{ old('ventilation', $house->utility?->ventilation) }}"
-                        placeholder="Contoh: Cukup / Kurang / Tanpa Ventilasi"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="water_source_id">Sumber Air Minum</label>
-                    <select id="water_source_id" name="water_source_id">
-                        <option value="">-- Pilih Sumber Air --</option>
-                        @foreach(($cats['WATER_SOURCE']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('water_source_id', $house->sanitation?->water_source_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="toilet_available">Ketersediaan Jamban / Kamar Mandi</label>
-                    <select id="toilet_available" name="toilet_available">
-                        <option value="">-- Pilih Status --</option>
-                        <option value="1" @selected(old('toilet_available', is_null($house->sanitation?->toilet_available) ? '' : (int)$house->sanitation?->toilet_available) === 1)>ADA / MEMILIKI SENDIRI</option>
-                        <option value="0" @selected(old('toilet_available', is_null($house->sanitation?->toilet_available) ? '' : (int)$house->sanitation?->toilet_available) === 0)>TIDAK PUNYA / MENUMPANG</option>
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="toilet_type_id">Jenis Jamban</label>
-                    <select id="toilet_type_id" name="toilet_type_id">
-                        <option value="">-- Pilih Jenis --</option>
-                        @foreach(($cats['TOILET_TYPE']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('toilet_type_id', $house->sanitation?->toilet_type_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="fecal_disposal_type_id">Tempat Pembuangan Akhir (TPA) Tinja</label>
-                    <select id="fecal_disposal_type_id" name="fecal_disposal_type_id">
-                        <option value="">-- Pilih TPA --</option>
-                        @foreach(($cats['FECAL_DISPOSAL']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('fecal_disposal_type_id', $house->sanitation?->fecal_disposal_type_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <label for="water_fecal_distance">Jarak Sumber Air ke TPA Tinja</label>
-                    <input
-                        type="text"
-                        id="water_fecal_distance"
-                        name="water_fecal_distance"
-                        value="{{ old('water_fecal_distance', $house->sanitation?->water_fecal_distance) }}"
-                        placeholder="Contoh: < 10 meter / > 10 meter"
-                    >
-                </div>
-
-                <div class="form-field">
-                    <label for="lighting_source_id">Sumber Penerangan / Daya Listrik</label>
-                    <select id="lighting_source_id" name="lighting_source_id">
-                        <option value="">-- Pilih Penerangan --</option>
-                        @foreach(($cats['LIGHTING_SOURCE']->values ?? []) as $v)
-                            <option value="{{ $v->id }}" @selected(old('lighting_source_id', $house->utility?->lighting_source_id) == $v->id)>
-                                {{ $v->label }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        {{-- SECTION 5: DOKUMENTASI FOTO LAPANGAN --}}
-        <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge rose">
-                    5
-                </div>
-                <div>
-                    <h3 class="form-section-title">Dokumentasi Foto Fisik Rumah</h3>
-                    <p class="form-section-desc">Unggah foto dokumentasi sudut bangunan dan ruangan yang jelas dari lapangan.</p>
-                </div>
-            </div>
-
-            @php
-                $typeMap = [
-                    'photo_front' => 'front',
-                    'photo_angle' => 'angle_45',
-                    'photo_side' => 'side',
-                    'photo_back' => 'back',
-                    'photo_family_room' => 'family_room',
-                    'photo_bathroom' => 'bathroom',
-                ];
-            @endphp
-
-            <div class="photo-upload-grid">
-                @foreach([
-                    ['photo_front', 'Tampak Depan', 'fa-camera'],
-                    ['photo_angle', 'Tampak Sudut 45°', 'fa-camera'],
-                    ['photo_side', 'Tampak Samping', 'fa-camera'],
-                    ['photo_back', 'Tampak Belakang', 'fa-camera'],
-                    ['photo_family_room', 'Ruang Keluarga / Dalam', 'fa-couch'],
-                    ['photo_bathroom', 'Kamar Mandi / Sanitasi', 'fa-bath']
-                ] as [$field, $label, $icon])
-                    @php
-                        $photoType = $typeMap[$field] ?? '';
-                        $existingPhoto = $house->photos ? $house->photos->where('type', $photoType)->first() : null;
-                        $existingUrl = $existingPhoto ? asset('storage/' . $existingPhoto->path) : null;
-                    @endphp
-
-                    <div class="photo-dropzone" onclick="document.getElementById('{{ $field }}').click()">
-                        <div style="font-size:24px; color:var(--slate-400); margin-bottom:6px;">
-                            <i class="fa-solid {{ $icon }}"></i>
+                        <div class="photo-dropzone" onclick="document.getElementById('{{ $field }}').click()">
+                            <div style="font-size:22px; color:var(--slate-400); margin-bottom:6px;">
+                                <i class="fa-solid {{ $icon }}"></i>
+                            </div>
+                            <strong style="font-size:13px; color:var(--slate-800); display:block;">{{ $label }}</strong>
+                            <span class="muted" style="font-size:11px;">
+                                {{ $existingUrl ? 'Klik ganti foto' : 'Klik unggah foto' }}
+                            </span>
+                            <input
+                                type="file"
+                                id="{{ $field }}"
+                                name="{{ $field }}"
+                                accept="image/*"
+                                onchange="previewImage(this, 'preview-{{ $field }}')"
+                            >
+                            <img
+                                id="preview-{{ $field }}"
+                                class="photo-preview"
+                                src="{{ $existingUrl ?? '' }}"
+                                alt="Preview {{ $label }}"
+                                style="{{ $existingUrl ? 'display:block;' : 'display:none;' }}"
+                            >
                         </div>
-                        <strong style="font-size:13px; color:var(--slate-800); display:block;">{{ $label }}</strong>
-                        <span class="muted" style="font-size:11px;">
-                            {{ $existingUrl ? 'Klik untuk mengganti foto' : 'Klik untuk memilih file' }}
-                        </span>
-                        <input
-                            type="file"
-                            id="{{ $field }}"
-                            name="{{ $field }}"
-                            accept="image/*"
-                            onchange="previewImage(this, 'preview-{{ $field }}')"
-                        >
-                        <img
-                            id="preview-{{ $field }}"
-                            class="photo-preview"
-                            src="{{ $existingUrl ?? '' }}"
-                            alt="Preview {{ $label }}"
-                            style="{{ $existingUrl ? 'display:block;' : 'display:none;' }}"
-                        >
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- SUBSECTION 2G: CATATAN LAPANGAN --}}
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge" style="background:#f1f5f9; color:var(--slate-700);">
+                        <i class="fa-solid fa-notes-medical"></i>
                     </div>
-                @endforeach
-            </div>
-        </div>
-
-        {{-- SECTION 6: CATATAN LAPANGAN --}}
-        <div class="form-section">
-            <div class="form-section-header">
-                <div class="form-section-badge" style="background:#f1f5f9; color:var(--slate-700);">
-                    6
+                    <div>
+                        <h3 class="form-section-title">Catatan Tambahan Lapangan</h3>
+                        <p class="form-section-desc">Catatan khusus mengenai kondisi lansia/balita, kendala medan, atau urgensi fisik.</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="form-section-title">Catatan Khusus & Rekomendasi Assessment</h3>
-                    <p class="form-section-desc">Catatan tambahan dari petugas surveyor mengenai kondisi sosial ekonomi atau urgensi perbaikan.</p>
+
+                <div class="form-field" style="margin-bottom:0;">
+                    <textarea
+                        id="assessment_notes"
+                        name="assessment_notes"
+                        rows="3"
+                        placeholder="Tuliskan catatan kondisi khusus hunian bila ada..."
+                    >{{ old('assessment_notes') }}</textarea>
                 </div>
             </div>
 
-            <div class="form-field" style="margin-bottom:0;">
-                <textarea
-                    id="assessment_notes"
-                    name="assessment_notes"
-                    rows="4"
-                    placeholder="Tuliskan catatan tambahan mengenai kondisi khusus hunian, anggota keluarga rentan (lansia/balita), atau kendala lokasi..."
-                >{{ old('assessment_notes') }}</textarea>
-            </div>
-        </div>
-
-        {{-- STICKY ACTION BUTTONS --}}
-        <div class="sticky-form-footer">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <a href="{{ $panel === 'surveyor' ? route('surveyor.rtlh.index') : route('houses.index') }}" class="btn small" style="background:transparent; color:#cbd5e1; border-color:rgba(255,255,255,0.2);">
-                    <i class="fa-solid fa-xmark"></i> Batal
-                </a>
-            </div>
-
-            <div class="actions" style="margin:0;">
-                <button type="submit" class="btn" name="submit" value="0" style="background:#334155; color:#ffffff; border-color:#475569;">
-                    <i class="fa-solid fa-floppy-disk"></i> Simpan Draft
+            {{-- STEP 2 FOOTER NAVIGATION --}}
+            <div class="step-navigation-bar">
+                <button type="button" class="btn" onclick="switchStep(1)" style="background:#fff; border-color:var(--slate-300);">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Data CPBM (Step 1)
                 </button>
 
-                @if($panel === 'surveyor')
-                    <button type="submit" class="btn primary" name="submit" value="1">
-                        <i class="fa-solid fa-paper-plane"></i> Simpan & Kirim Review
+                <button type="button" class="btn primary" onclick="switchStep(3)">
+                    Lanjut: Anggaran & Proposal (Step 3) <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        {{-- ========================================================================= --}}
+        {{-- STEP 3: SUMBER ANGGARAN & PROPOSAL USULAN --}}
+        {{-- ========================================================================= --}}
+        <div class="form-step-pane" id="pane-step-3">
+            <div class="form-section">
+                <div class="form-section-header">
+                    <div class="form-section-badge" style="background:#fef3c7; color:#b45309;">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 class="form-section-title">Langkah 3: Sumber Anggaran & Berkas Usulan Proposal</h3>
+                        <p class="form-section-desc">Pendataan sumber pembiayaan, nilai alokasi anggaran, status realisasi, dan upload berkas proposal.</p>
+                    </div>
+                </div>
+
+                <div class="grid2">
+                    {{-- SUMBER ANGGARAN --}}
+                    <div class="form-field">
+                        <label for="funding_source">
+                            <i class="fa-solid fa-wallet" style="color:#0284c7;"></i>
+                            Sumber Anggaran
+                        </label>
+                        @php
+                            $currentFunding = old('funding_source', $house->funding_source);
+                            $fundingOptions = [
+                                'APBD Kabupaten Cirebon',
+                                'APBD Provinsi Jawa Barat',
+                                'BSPS (Kementerian PKP / PUPR)',
+                                'BAZNAS Kabupaten Cirebon',
+                                'DAK Fisik Perumahan',
+                                'CSR / Swadaya Masyarakat',
+                                'Lainnya',
+                            ];
+                        @endphp
+                        <select id="funding_source" name="funding_source">
+                            <option value="">-- Pilih Sumber Anggaran --</option>
+                            @foreach($fundingOptions as $fOpt)
+                                <option value="{{ $fOpt }}" @selected(strtoupper(trim((string)$currentFunding)) === strtoupper(trim($fOpt)))>
+                                    {{ $fOpt }}
+                                </option>
+                            @endforeach
+                            @if($currentFunding && !in_array(strtoupper(trim($currentFunding)), array_map('strtoupper', array_map('trim', $fundingOptions))))
+                                <option value="{{ $currentFunding }}" selected>{{ $currentFunding }}</option>
+                            @endif
+                        </select>
+                        <small class="muted">Pilih alokasi pembiayaan atau sumber bantuan penanganan RTLH.</small>
+                    </div>
+
+                    {{-- NILAI KEGIATAN / ANGGARAN --}}
+                    <div class="form-field">
+                        <label for="budget_amount">
+                            <i class="fa-solid fa-money-bill-wave" style="color:#16a34a;"></i>
+                            Nilai Anggaran / Kegiatan (Rp)
+                        </label>
+                        <input
+                            type="number"
+                            id="budget_amount"
+                            name="budget_amount"
+                            value="{{ old('budget_amount', $house->budget_amount ? (int)$house->budget_amount : '') }}"
+                            placeholder="Contoh: 20000000"
+                            min="0"
+                            step="100000"
+                        >
+                        <small class="muted">Nominal usulan biaya bantuan perbaikan (misal: 20.000.000).</small>
+                    </div>
+                </div>
+
+                {{-- STATUS REALISASI DENGAN INDIKATOR WARNA KUNING & HIJAU --}}
+                <div style="margin-top:10px; margin-bottom:20px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-lg); padding:20px;">
+                    <label style="font-size:14px; font-weight:800; color:var(--slate-800); display:block; margin-bottom:12px;">
+                        <i class="fa-solid fa-circle-notch"></i> Status Realisasi RTLH
+                    </label>
+
+                    @php
+                        $realStatus = old('realization_status', $house->realization_status ?: 'not_realized');
+                    @endphp
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+                        {{-- KUNING: BELUM TEREALISASI --}}
+                        <label class="realization-radio-card {{ $realStatus !== 'realized' ? 'active-kuning' : '' }}" id="card-not-realized" onclick="selectRealizationCard('not_realized')">
+                            <div style="display:flex; align-items:flex-start; gap:12px;">
+                                <input
+                                    type="radio"
+                                    name="realization_status"
+                                    id="status_not_realized"
+                                    value="not_realized"
+                                    @checked($realStatus !== 'realized')
+                                    style="margin-top:4px;"
+                                >
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde047; font-weight:800; font-size:12px;">
+                                            <i class="fa-solid fa-clock"></i> Belum Terealisasi
+                                        </span>
+                                    </div>
+                                    <p class="muted" style="margin:6px 0 0 0; font-size:12px; line-height:1.4;">
+                                        Data rumah RTLH tercatat dalam basis data / proposal usulan, namun belum dilaksanakan pekerjaan fisik atau pencairan dana.
+                                    </p>
+                                </div>
+                            </div>
+                        </label>
+
+                        {{-- HIJAU: SUDAH TEREALISASI --}}
+                        <label class="realization-radio-card {{ $realStatus === 'realized' ? 'active-hijau' : '' }}" id="card-realized" onclick="selectRealizationCard('realized')">
+                            <div style="display:flex; align-items:flex-start; gap:12px;">
+                                <input
+                                    type="radio"
+                                    name="realization_status"
+                                    id="status_realized"
+                                    value="realized"
+                                    @checked($realStatus === 'realized')
+                                    style="margin-top:4px;"
+                                >
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:800; font-size:12px;">
+                                            <i class="fa-solid fa-circle-check"></i> Sudah Terealisasi 
+                                        </span>
+                                    </div>
+                                    <p class="muted" style="margin:6px 0 0 0; font-size:12px; line-height:1.4;">
+                                        Bantuan perbaikan rumah telah selesai direalisasikan dan diverifikasi di lapangan.
+                                    </p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {{-- UPLOAD BERKAS PROPOSAL USULAN --}}
+                <div class="form-field">
+                    <label for="proposal_document">
+                        <i class="fa-solid fa-file-arrow-up" style="color:#0284c7;"></i>
+                        Unggah Berkas Proposal Usulan / Surat Pengantar (PDF/DOCX/Scan)
+                    </label>
+
+                    <div style="border:2px dashed var(--slate-300); border-radius:var(--radius-lg); padding:24px; text-align:center; background:var(--slate-50); position:relative;">
+                        <i class="fa-solid fa-file-lines fa-3x" style="color:var(--slate-300); margin-bottom:12px; display:block;"></i>
+                        <input
+                            type="file"
+                            id="proposal_document"
+                            name="proposal_document"
+                            accept=".pdf,.doc,.docx,.zip,.rar,.jpg,.jpeg,.png"
+                            style="margin:0 auto; max-width:320px;"
+                        >
+                        <div class="muted" style="font-size:12px; margin-top:8px;">
+                            Format yang didukung: PDF, DOCX, ZIP, atau Gambar scan dokumen. Ukuran maksimal 10 MB.
+                        </div>
+
+                        @if($house->proposal_document_path)
+                            <div style="margin-top:12px; padding:10px 16px; background:#eff6ff; border-radius:8px; border:1px solid #bfdbfe; display:inline-flex; align-items:center; gap:8px; font-size:12px;">
+                                <i class="fa-solid fa-paperclip text-blue-600" style="color:#2563eb;"></i>
+                                <span style="font-weight:700; color:#1e40af;">File Proposal Tersimpan:</span>
+                                <a href="{{ asset('storage/' . $house->proposal_document_path) }}" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:700;">
+                                    Lihat / Unduh Dokumen
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- CATATAN USULAN --}}
+                <div class="form-field" style="margin-bottom:0;">
+                    <label for="proposal_notes">Catatan Usulan / Administrasi Proposal</label>
+                    <textarea
+                        id="proposal_notes"
+                        name="proposal_notes"
+                        rows="3"
+                        placeholder="Tuliskan keterangan mengenai nomor surat usulan desa, SK verifikasi, atau sumber usulan kegiatan..."
+                    >{{ old('proposal_notes', $house->proposal_notes) }}</textarea>
+                </div>
+            </div>
+
+            {{-- STEP 3 FOOTER & FINAL SUBMIT BAR --}}
+            <div class="step-navigation-bar" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl);">
+                <button type="button" class="btn" onclick="switchStep(2)" style="background:transparent; color:#cbd5e1; border-color:rgba(255,255,255,0.25);">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Data Fisik (Step 2)
+                </button>
+
+                <div class="actions" style="margin:0; display:flex; gap:10px; align-items:center;">
+                    <button type="submit" class="btn" name="submit" value="0" style="background:#334155; color:#ffffff; border-color:#475569;">
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Draft
                     </button>
-                @else
-                    <button type="submit" class="btn primary">
-                        <i class="fa-solid fa-check"></i> Simpan Data Rumah
-                    </button>
-                @endif
+
+                    @if($panel === 'surveyor')
+                        <button type="submit" class="btn primary" name="submit" value="1">
+                            <i class="fa-solid fa-paper-plane"></i> Simpan & Kirim Review
+                        </button>
+                    @else
+                        <button type="submit" class="btn primary">
+                            <i class="fa-solid fa-check"></i> Simpan Data RTLH
+                        </button>
+                    @endif
+                </div>
             </div>
         </div>
     </form>
@@ -805,7 +1287,87 @@
     @push('scripts')
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script>
+            let currentStep = 1;
             let formMap, formMarker;
+
+            function switchStep(step) {
+                if (step < 1 || step > 3) return;
+
+                // Update active tab buttons
+                for (let i = 1; i <= 3; i++) {
+                    const tab = document.getElementById(`step-tab-${i}`);
+                    const pane = document.getElementById(`pane-step-${i}`);
+
+                    if (tab) {
+                        tab.classList.remove('active');
+                        if (i < step) {
+                            tab.classList.add('completed');
+                        } else {
+                            tab.classList.remove('completed');
+                        }
+                    }
+
+                    if (pane) {
+                        pane.classList.remove('active');
+                    }
+                }
+
+                const currentTab = document.getElementById(`step-tab-${step}`);
+                const currentPane = document.getElementById(`pane-step-${step}`);
+                if (currentTab) currentTab.classList.add('active');
+                if (currentPane) currentPane.classList.add('active');
+
+                currentStep = step;
+
+                // When entering step 2, initialize Leaflet map if not yet done
+                if (step === 2 && formMap) {
+                    setTimeout(() => {
+                        formMap.invalidateSize();
+                    }, 200);
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            function validateAndGoStep(targetStep) {
+                if (targetStep === 2) {
+                    const nik = document.getElementById('nik');
+                    const nama = document.getElementById('head_of_household_name');
+                    const region = document.getElementById('region_id');
+
+                    if (!region.value) {
+                        alert('Silakan pilih Wilayah Administratif (Kelurahan) terlebih dahulu.');
+                        region.focus();
+                        return;
+                    }
+
+                    if (!nik.value.trim()) {
+                        if (!confirm('NIK belum diisi. Apakah Anda ingin melanjutkan pengisian data rumah?')) {
+                            nik.focus();
+                            return;
+                        }
+                    }
+                }
+
+                switchStep(targetStep);
+            }
+
+            function selectRealizationCard(val) {
+                const radioNot = document.getElementById('status_not_realized');
+                const radioYes = document.getElementById('status_realized');
+                const cardNot = document.getElementById('card-not-realized');
+                const cardYes = document.getElementById('card-realized');
+
+                if (val === 'realized') {
+                    if (radioYes) radioYes.checked = true;
+                    if (cardYes) cardYes.classList.add('active-hijau');
+                    if (cardNot) cardNot.classList.remove('active-kuning');
+                } else {
+                    if (radioNot) radioNot.checked = true;
+                    if (cardNot) cardNot.classList.add('active-kuning');
+                    if (cardYes) cardYes.classList.remove('active-hijau');
+                }
+            }
 
             document.addEventListener('DOMContentLoaded', function () {
                 const latInput = document.getElementById('latitude');
@@ -813,38 +1375,63 @@
                 const regionInput = document.getElementById('region_id');
                 const houseCodeInput = document.getElementById('house_code');
 
-                let initLat = parseFloat(latInput.value) || -6.7320000;
-                let initLng = parseFloat(lngInput.value) || 108.5520000;
-                let zoomLevel = (latInput.value && lngInput.value) ? 16 : 12;
+                // Batas wilayah Kota Cirebon (bukan Kabupaten)
+                const KOTA_CIREBON_BOUNDS = L.latLngBounds(
+                    L.latLng(-6.7500, 108.5350),  // Southwest corner
+                    L.latLng(-6.6900, 108.5800)   // Northeast corner
+                );
+                const KOTA_CIREBON_CENTER = [-6.7060, 108.5565];
 
-                formMap = L.map('form-map').setView([initLat, initLng], zoomLevel);
+                let initLat = parseFloat(latInput?.value) || KOTA_CIREBON_CENTER[0];
+                let initLng = parseFloat(lngInput?.value) || KOTA_CIREBON_CENTER[1];
+                let zoomLevel = (latInput?.value && lngInput?.value) ? 16 : 13;
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(formMap);
+                const mapEl = document.getElementById('form-map');
+                if (mapEl) {
+                    formMap = L.map('form-map', {
+                        maxBounds: KOTA_CIREBON_BOUNDS.pad(0.05), // sedikit padding agar tidak terlalu ketat
+                        maxBoundsViscosity: 1.0,                  // tidak bisa geser keluar batas
+                        minZoom: 12
+                    }).setView([initLat, initLng], zoomLevel);
 
-                formMarker = L.marker([initLat, initLng], { draggable: true }).addTo(formMap);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap | Kota Cirebon'
+                    }).addTo(formMap);
 
-                // Update inputs when marker is dragged
-                formMarker.on('dragend', function (e) {
-                    const coord = e.target.getLatLng();
-                    latInput.value = coord.lat.toFixed(7);
-                    lngInput.value = coord.lng.toFixed(7);
-                });
+                    formMarker = L.marker([initLat, initLng], { draggable: true }).addTo(formMap);
 
-                // Update marker when map is clicked
-                formMap.on('click', function (e) {
-                    const coord = e.latlng;
-                    formMarker.setLatLng(coord);
-                    latInput.value = coord.lat.toFixed(7);
-                    lngInput.value = coord.lng.toFixed(7);
-                });
+                    // Update inputs when marker is dragged
+                    formMarker.on('dragend', function (e) {
+                        const coord = e.target.getLatLng();
+                        if (!KOTA_CIREBON_BOUNDS.contains(coord)) {
+                            alert('Titik berada di luar cakupan wilayah Kota Cirebon.');
+                            formMarker.setLatLng([initLat, initLng]);
+                            return;
+                        }
+                        latInput.value = coord.lat.toFixed(7);
+                        lngInput.value = coord.lng.toFixed(7);
+                    });
 
-                regionInput.addEventListener('change', updateCodePreview);
-                updateCodePreview();
+                    // Update marker when map is clicked
+                    formMap.on('click', function (e) {
+                        const coord = e.latlng;
+                        if (!KOTA_CIREBON_BOUNDS.contains(coord)) {
+                            alert('Titik berada di luar wilayah Kota Cirebon. Silakan pilih lokasi dalam batas kota.');
+                            return;
+                        }
+                        formMarker.setLatLng(coord);
+                        latInput.value = coord.lat.toFixed(7);
+                        lngInput.value = coord.lng.toFixed(7);
+                    });
+                }
 
-                if (!latInput.value || !lngInput.value) {
+                if (regionInput) {
+                    regionInput.addEventListener('change', updateCodePreview);
+                    updateCodePreview();
+                }
+
+                if (!latInput?.value || !lngInput?.value) {
                     getCurrentLocation(true);
                 }
 
@@ -895,6 +1482,7 @@
             function updateCodePreview() {
                 const regionInput = document.getElementById('region_id');
                 const houseCodeInput = document.getElementById('house_code');
+                if (!houseCodeInput || !regionInput) return;
                 if ((!houseCodeInput.value && !regionInput.value) || (houseCodeInput.value && !houseCodeInput.value.endsWith('-XXXX'))) return;
 
                 const regionName = regionInput.options[regionInput.selectedIndex]?.dataset.regionName || '';
@@ -905,47 +1493,57 @@
             }
 
             function updateMapFromInputs() {
-                const lat = parseFloat(document.getElementById('latitude').value);
-                const lng = parseFloat(document.getElementById('longitude').value);
+                const lat = parseFloat(document.getElementById('latitude')?.value);
+                const lng = parseFloat(document.getElementById('longitude')?.value);
 
                 if (!isNaN(lat) && !isNaN(lng) && formMap && formMarker) {
                     const newLatLng = L.latLng(lat, lng);
+                    if (typeof KOTA_CIREBON_BOUNDS !== 'undefined' && !KOTA_CIREBON_BOUNDS.contains(newLatLng)) {
+                        alert('Koordinat yang dimasukkan berada di luar wilayah Kota Cirebon. Silakan perbaiki.');
+                        return;
+                    }
                     formMarker.setLatLng(newLatLng);
                     formMap.panTo(newLatLng);
                 }
             }
 
             function getCurrentLocation(isAutomatic = false) {
-                if (!navigator.geolocation) {
-                    alert('Browser Anda tidak mendukung deteksi geolokasi.');
-                    return;
-                }
+                if (!navigator.geolocation) return;
 
                 const latInput = document.getElementById('latitude');
                 const lngInput = document.getElementById('longitude');
                 const gpsStatus = document.getElementById('gps-status');
 
-                latInput.placeholder = 'Mengambil GPS...';
-                lngInput.placeholder = 'Mengambil GPS...';
-                gpsStatus.textContent = isAutomatic ? 'Mengambil lokasi GPS terkini...' : 'Memperbarui lokasi GPS terkini...';
+                if (latInput && !latInput.value) latInput.placeholder = 'Mengambil GPS...';
+                if (lngInput && !lngInput.value) lngInput.placeholder = 'Mengambil GPS...';
 
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         const lat = position.coords.latitude.toFixed(7);
                         const lng = position.coords.longitude.toFixed(7);
+                        const detectedLatLng = L.latLng(parseFloat(lat), parseFloat(lng));
 
-                        latInput.value = lat;
-                        lngInput.value = lng;
+                        // Validasi: lokasi GPS harus dalam wilayah Kota Cirebon
+                        if (typeof KOTA_CIREBON_BOUNDS !== 'undefined' && !KOTA_CIREBON_BOUNDS.contains(detectedLatLng)) {
+                            if (gpsStatus) gpsStatus.textContent = 'Lokasi GPS Anda terdeteksi di luar wilayah Kota Cirebon. Silakan pilih titik secara manual pada peta.';
+                            if (!isAutomatic) alert('Lokasi GPS Anda berada di luar wilayah Kota Cirebon. Silakan tentukan titik koordinat secara manual pada peta.');
+                            return;
+                        }
+
+                        if (latInput) latInput.value = lat;
+                        if (lngInput) lngInput.value = lng;
 
                         updateMapFromInputs();
-                        const accuracy = Math.round(position.coords.accuracy);
-                        gpsStatus.textContent = `Lokasi GPS terkini berhasil digunakan (akurasi sekitar ${accuracy} m).`;
+                        if (gpsStatus) {
+                            const accuracy = Math.round(position.coords.accuracy);
+                            gpsStatus.textContent = `Lokasi GPS terkini aktif (akurasi ~${accuracy}m). Pin peta dapat digeser.`;
+                        }
                     },
                     function(error) {
-                        gpsStatus.textContent = 'GPS belum tersedia. Izinkan akses lokasi atau tentukan titik pada peta.';
-                        if (!isAutomatic) alert('Gagal mengambil titik koordinat GPS: ' + error.message);
+                        if (gpsStatus) gpsStatus.textContent = 'GPS otomatis tidak aktif. Silakan pilih titik koordinat langsung pada peta.';
+                        if (!isAutomatic) alert('Gagal mendeteksi lokasi GPS: ' + error.message);
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
                 );
             }
 

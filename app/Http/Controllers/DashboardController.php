@@ -18,10 +18,6 @@ class DashboardController extends Controller
             return redirect()->route('surveyor.dashboard');
         }
 
-        if ($user->hasRole('viewer')) {
-            return redirect()->route('public.home');
-        }
-
         abort(403);
     }
 }

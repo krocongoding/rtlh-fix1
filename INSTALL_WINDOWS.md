@@ -31,6 +31,5 @@ php artisan serve
 ## Demo accounts
 - Admin: `admin@cirebon-rtlh.test` / `password`
 - Surveyor: `surveyor@cirebon-rtlh.test` / `password`
-- Viewer: `viewer@cirebon-rtlh.test` / `password`
 
 Ganti password demo sebelum deployment.

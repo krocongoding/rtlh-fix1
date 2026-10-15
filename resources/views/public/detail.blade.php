@@ -1,4 +1,4 @@
-<x-layouts.app title="Detail Unit RTLH {{ $house->house_code }}">
+<x-layouts.public title="Detail Unit RTLH {{ $house->house_code }}">
 
     @push('head')
         @if($house->latitude && $house->longitude)
@@ -434,4 +434,4 @@
         @endif
     @endpush
 
-</x-layouts.app>
+</x-layouts.public>

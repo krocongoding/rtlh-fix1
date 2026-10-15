@@ -1,4 +1,4 @@
-<x-layouts.app title="Katalog Open Data RTLH">
+<x-layouts.public title="Katalog Open Data RTLH">
 
     <div class="pagehead">
         <div>
@@ -252,4 +252,4 @@
         </div>
     </div>
 
-</x-layouts.app>
+</x-layouts.public>

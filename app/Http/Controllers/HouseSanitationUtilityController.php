@@ -53,8 +53,19 @@ class HouseSanitationUtilityController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $wastewaterDisposalCategory = MasterCategory::where(
+            'code',
+            'WASTEWATER_DISPOSAL'
+        )->first();
+
+        $wastewaterDisposals = $wastewaterDisposalCategory ? $wastewaterDisposalCategory->values()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get() : collect();
+
         $house->load([
             'sanitation.waterSource',
+            'sanitation.wastewaterDisposal',
             'sanitation.toiletType',
             'sanitation.fecalDisposalType',
             'utility.lightingSource',
@@ -65,6 +76,7 @@ class HouseSanitationUtilityController extends Controller
             compact(
                 'house',
                 'waterSources',
+                'wastewaterDisposals',
                 'toiletTypes',
                 'fecalDisposals',
                 'lightingSources'
@@ -76,6 +88,11 @@ class HouseSanitationUtilityController extends Controller
     {
         $validated = $request->validate([
             'water_source_id' => [
+                'nullable',
+                'exists:master_values,id',
+            ],
+
+            'wastewater_disposal_id' => [
                 'nullable',
                 'exists:master_values,id',
             ],
@@ -126,6 +143,9 @@ class HouseSanitationUtilityController extends Controller
                 [
                     'water_source_id' =>
                         $validated['water_source_id'] ?? null,
+
+                    'wastewater_disposal_id' =>
+                        $validated['wastewater_disposal_id'] ?? null,
 
                     'toilet_available' =>
                         $validated['toilet_available'],

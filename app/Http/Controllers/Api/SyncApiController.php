@@ -59,7 +59,7 @@ class SyncApiController extends Controller
      */
     public function regions(): JsonResponse
     {
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
             ->orderBy('level')
             ->orderBy('name')

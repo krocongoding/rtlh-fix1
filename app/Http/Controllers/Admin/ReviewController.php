@@ -120,11 +120,22 @@ class ReviewController extends Controller
             'Data tidak dapat dikembalikan ke revisi dari status sekarang.'
         );
 
+        $validated = $request->validate([
+            'revision_notes' => ['required', 'string', 'min:5', 'max:3000'],
+        ], [
+            'revision_notes.required' => 'Catatan revisi wajib diisi agar surveyor mengetahui poin yang perlu diperbaiki.',
+            'revision_notes.min' => 'Catatan revisi minimal 5 karakter.',
+            'revision_notes.max' => 'Catatan revisi maksimal 3000 karakter.',
+        ]);
+
         $old = $house->toArray();
 
         $house->update([
             'status' => 'revision',
             'is_public' => false,
+            'revision_notes' => $validated['revision_notes'],
+            'revised_at' => now(),
+            'revised_by' => auth()->id(),
             'updated_by' => auth()->id(),
         ]);
 
@@ -139,7 +150,7 @@ class ReviewController extends Controller
 
         return back()->with(
             'ok',
-            'Data dikembalikan ke Surveyor untuk revisi.'
+            'Data berhasil dikembalikan ke Surveyor disertai catatan perbaikan.'
         );
     }
 }

@@ -360,8 +360,8 @@ class SurveyorApiController extends Controller
             'room_function_id'        => ['nullable', 'integer', 'exists:master_values,id'],
             'ownership_status_id'     => ['nullable', 'integer', 'exists:master_values,id'],
             'land_status_id'          => ['nullable', 'integer', 'exists:master_values,id'],
-            'latitude'                => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude'               => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude'                => ['nullable', 'numeric', 'between:-6.7500,-6.6900'],
+            'longitude'               => ['nullable', 'numeric', 'between:108.5350,108.5800'],
             'submit'                  => ['nullable', 'boolean'],
 
             // Struktur

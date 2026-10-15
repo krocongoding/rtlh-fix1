@@ -63,12 +63,17 @@ class HouseDataService
             }
 
             $roof = [];
-            foreach (['roof_frame_condition_id' => 'frame_condition_id', 'roof_material_id' => 'material_id', 'roof_condition_id' => 'condition_id'] as $from => $to) {
+            foreach ([
+                'roof_frame_material_id' => 'frame_material_id',
+                'roof_frame_condition_id' => 'frame_condition_id',
+                'roof_material_id' => 'material_id',
+                'roof_condition_id' => 'condition_id'
+            ] as $from => $to) {
                 $roof[$to] = $data[$from] ?? null;
             }
 
             $san = [];
-            foreach (['water_source_id', 'toilet_available', 'toilet_type_id', 'fecal_disposal_type_id', 'water_fecal_distance'] as $k) {
+            foreach (['water_source_id', 'wastewater_disposal_id', 'toilet_available', 'toilet_type_id', 'fecal_disposal_type_id', 'water_fecal_distance'] as $k) {
                 $san[$k] = $data[$k] ?? null;
             }
 
@@ -77,8 +82,20 @@ class HouseDataService
                 $util[$k] = $data[$k] ?? null;
             }
 
+            // Handle proposal document upload if passed
+            if (isset($data['proposal_document']) && $data['proposal_document'] instanceof \Illuminate\Http\UploadedFile) {
+                $docPath = $data['proposal_document']->store('rtlh/proposals', 'public');
+                $data['proposal_document_path'] = $docPath;
+            }
+
             // Unset extracted fields from house data array
-            foreach (['assessment_notes', 'foundation', 'sloof_condition_id', 'column_condition_id', 'beam_condition_id', 'floor_material_id', 'floor_condition_id', 'wall_material_id', 'wall_condition_id', 'roof_frame_condition_id', 'roof_material_id', 'roof_condition_id', 'water_source_id', 'toilet_available', 'toilet_type_id', 'fecal_disposal_type_id', 'water_fecal_distance', 'light_opening', 'ventilation', 'lighting_source_id', 'ceiling_condition_id'] as $k) {
+            foreach ([
+                'assessment_notes', 'foundation', 'sloof_condition_id', 'column_condition_id', 'beam_condition_id',
+                'floor_material_id', 'floor_condition_id', 'wall_material_id', 'wall_condition_id',
+                'roof_frame_material_id', 'roof_frame_condition_id', 'roof_material_id', 'roof_condition_id',
+                'water_source_id', 'wastewater_disposal_id', 'toilet_available', 'toilet_type_id', 'fecal_disposal_type_id', 'water_fecal_distance',
+                'light_opening', 'ventilation', 'lighting_source_id', 'ceiling_condition_id', 'proposal_document'
+            ] as $k) {
                 unset($data[$k]);
             }
 
@@ -92,6 +109,10 @@ class HouseDataService
             if ($submit) {
                 $data['status'] = 'submitted';
                 $data['is_public'] = false;
+            }
+
+            if (!isset($data['realization_status']) || empty($data['realization_status'])) {
+                $data['realization_status'] = $house->realization_status ?: 'not_realized';
             }
 
             $house->fill($data);

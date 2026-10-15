@@ -79,11 +79,10 @@
 
     {{-- DEMO CREDENTIALS HINT --}}
     <div class="demo-credentials">
-        <h6><i class="fa-solid fa-lightbulb text-amber-500"></i> Akun Pengujian Demo:</h6>
+        <h6><i class="fa-solid fa-lightbulb text-amber-500"></i> Akun Pengujian Petugas:</h6>
         <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-            <div><strong>Admin:</strong> <code>admin@rtlh.test</code> / <code>password</code></div>
-            <div><strong>Surveyor:</strong> <code>surveyor@rtlh.test</code> / <code>password</code></div>
-            <div><strong>Viewer:</strong> <code>viewer@rtlh.test</code> / <code>password</code></div>
+            <div><strong>Admin:</strong> <code>admin@cirebon-rtlh.test</code> / <code>password</code></div>
+            <div><strong>Surveyor:</strong> <code>surveyor@cirebon-rtlh.test</code> / <code>password</code></div>
         </div>
     </div>
 

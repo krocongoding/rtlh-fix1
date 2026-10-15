@@ -84,9 +84,9 @@ class HouseController extends Controller
             ->get()
             ->keyBy('code');
 
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
-            ->orderBy('level')
+            ->whereIn('type', ['village', 'desa'])
             ->orderBy('name')
             ->get();
 
@@ -230,9 +230,9 @@ class HouseController extends Controller
             ->get()
             ->keyBy('code');
 
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
-            ->orderBy('level')
+            ->whereIn('type', ['village', 'desa'])
             ->orderBy('name')
             ->get();
 

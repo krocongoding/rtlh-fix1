@@ -6,6 +6,7 @@ use App\Http\Controllers\HouseAssessmentController;
 use App\Http\Controllers\HouseConditionController;
 use App\Http\Controllers\HouseController;
 use App\Http\Controllers\HouseOccupantController;
+use App\Http\Controllers\HouseRealizationController;
 use App\Http\Controllers\HouseSanitationUtilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicController;
@@ -153,6 +154,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/houses/{house}', [HouseController::class, 'show'])
         ->name('houses.show')
         ->can('view', 'house');
+
+    Route::post('/houses/{house}/realization', [HouseRealizationController::class, 'update'])
+        ->name('houses.realization.update');
 
 
     /*

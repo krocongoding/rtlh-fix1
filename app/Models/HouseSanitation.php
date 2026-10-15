@@ -12,6 +12,7 @@ class HouseSanitation extends Model
     protected $fillable = [
         'house_id',
         'water_source_id',
+        'wastewater_disposal_id',
         'toilet_available',
         'toilet_type_id',
         'fecal_disposal_type_id',
@@ -35,6 +36,14 @@ class HouseSanitation extends Model
         return $this->belongsTo(
             MasterValue::class,
             'water_source_id'
+        );
+    }
+
+    public function wastewaterDisposal(): BelongsTo
+    {
+        return $this->belongsTo(
+            MasterValue::class,
+            'wastewater_disposal_id'
         );
     }
 

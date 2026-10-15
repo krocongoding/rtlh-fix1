@@ -17,15 +17,41 @@
         </div>
     </x-slot>
 
+    <div class="card" style="margin-bottom: 20px;">
+        <form method="GET" action="{{ route('regions.index') }}">
+            <div class="toolbar">
+                <div style="flex:1; min-width:260px; position:relative;">
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Cari nama desa..."
+                        style="padding-left:36px;"
+                    >
+                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--slate-400);"></i>
+                </div>
+                <button type="submit" class="btn primary">
+                    <i class="fa-solid fa-magnifying-glass"></i> Cari Desa
+                </button>
+                @if(request('search'))
+                    <a href="{{ route('regions.index') }}" class="btn">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+
     <div class="card" style="padding:0; overflow:hidden;">
         <div style="padding: 18px 24px; border-bottom: 1px solid var(--slate-200); background: var(--slate-50); display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
-                    Tabel Wilayah
+                    Monitoring Realisasi RTLH per Desa
                 </h3>
+                <p class="muted" style="margin:2px 0 0 0; font-size:12px;">Cakupan wilayah dibatasi khusus tingkat Desa/Kelurahan dengan rekap realisasi.</p>
             </div>
             <span class="badge published">
-                Total {{ number_format($regions->total()) }} Wilayah
+                Total {{ number_format($regions->total()) }} Desa
             </span>
         </div>
 
@@ -34,11 +60,12 @@
                 <thead>
                     <tr>
                         <th style="width: 50px;">No</th>
-                        <th style="width: 140px;">Kode Wilayah</th>
-                        <th>Nama Wilayah</th>
-                        <th>Tipe</th>
-                        <th>Level</th>
-                        <th>Status</th>
+                        <th style="width: 140px;">Kode Desa</th>
+                        <th>Nama Desa</th>
+                        <th style="text-align: center;">Total RTLH</th>
+                        <th style="text-align: center;">Sudah Terealisasi</th>
+                        <th style="text-align: center;">Belum Terealisasi</th>
+                        <th style="text-align: right; width: 140px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,29 +77,33 @@
                             </td>
                             <td>
                                 <strong style="color:var(--slate-900);">{{ $region->name }}</strong>
+                                <span class="muted" style="font-size:11px; display:block;">Desa</span>
                             </td>
-                            <td>
-                                <span class="badge" style="background:var(--slate-100); color:var(--slate-700);">
-                                    {{ ucfirst($region->type) }}
+                            <td style="text-align: center;">
+                                <span class="badge" style="background:#f1f5f9; color:#334155; font-weight:700;">
+                                    {{ number_format($region->total_houses ?? 0) }} Unit
                                 </span>
                             </td>
-                            <td>
-                                <span class="badge" style="background:#e0f2fe; color:#0369a1;">
-                                    Level {{ $region->level }}
+                            <td style="text-align: center;">
+                                <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:700;">
+                                    <i class="fa-solid fa-circle-check"></i> {{ number_format($region->realized_count ?? 0) }} Unit
                                 </span>
                             </td>
-                            <td>
-                                @if($region->is_active)
-                                    <span class="badge published"><i class="fa-solid fa-circle-check"></i> Aktif</span>
-                                @else
-                                    <span class="badge draft">Nonaktif</span>
-                                @endif
+                            <td style="text-align: center;">
+                                <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde047; font-weight:700;">
+                                    <i class="fa-solid fa-clock"></i> {{ number_format($region->not_realized_count ?? 0) }} Unit
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{{ route('houses.index', ['region_id' => $region->id]) }}" class="btn small" style="background:#fff; border-color:var(--slate-300); color:var(--slate-700);">
+                                    <i class="fa-solid fa-list-check"></i> Lihat RTLH
+                                </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" style="text-align:center; padding:48px 24px;" class="muted">
-                                Belum ada data wilayah.
+                            <td colspan="7" style="text-align:center; padding:48px 24px;" class="muted">
+                                Belum ada data wilayah desa.
                             </td>
                         </tr>
                     @endforelse

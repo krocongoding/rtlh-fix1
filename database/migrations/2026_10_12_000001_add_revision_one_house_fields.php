@@ -13,6 +13,10 @@ return new class extends Migration
             $table->string('nik', 16)->nullable()->unique()->after('region_id');
             $table->string('head_of_household_name')->nullable()->after('nik');
             $table->string('realization_status', 30)->default('not_realized')->index()->after('status');
+            $table->string('funding_source', 100)->nullable()->after('realization_status');
+            $table->decimal('budget_amount', 15, 2)->nullable()->after('funding_source');
+            $table->string('proposal_document_path')->nullable()->after('budget_amount');
+            $table->text('proposal_notes')->nullable()->after('proposal_document_path');
         });
 
         Schema::table('house_roofs', function (Blueprint $table) {
@@ -91,9 +95,16 @@ return new class extends Migration
 
         Schema::table('houses', function (Blueprint $table) {
             $table->dropUnique(['nik']);
-            $table->dropColumn(['nik', 'head_of_household_name']);
             $table->dropIndex(['realization_status']);
-            $table->dropColumn('realization_status');
+            $table->dropColumn([
+                'nik',
+                'head_of_household_name',
+                'realization_status',
+                'funding_source',
+                'budget_amount',
+                'proposal_document_path',
+                'proposal_notes',
+            ]);
         });
     }
 };

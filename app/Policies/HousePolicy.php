@@ -8,26 +8,24 @@ use App\Models\User;
 class HousePolicy
 {
     /**
-     * Admin, Surveyor, dan Viewer boleh melihat daftar rumah.
+     * Admin dan Surveyor boleh melihat daftar rumah internal.
      */
     public function viewAny(User $user): bool
     {
         return $user->hasAnyRole([
             'admin',
             'surveyor',
-            'viewer',
         ]);
     }
 
     /**
-     * Admin, Surveyor, dan Viewer boleh melihat detail rumah.
+     * Admin dan Surveyor boleh melihat detail rumah internal.
      */
     public function view(User $user, House $house): bool
     {
         return $user->hasAnyRole([
             'admin',
             'surveyor',
-            'viewer',
         ]);
     }
 

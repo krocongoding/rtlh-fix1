@@ -2,7 +2,17 @@
     <x-slot name="header">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; width:100%;">
             <div>
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+                    @if($house->realization_status === 'realized')
+                        <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:800;">
+                            <i class="fa-solid fa-circle-check"></i> Sudah Terealisasi 
+                        </span>
+                    @else
+                        <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde047; font-weight:800;">
+                            <i class="fa-solid fa-clock"></i> Belum Terealisasi 
+                        </span>
+                    @endif
+
                     @if($house->status === 'published')
                         <span class="badge published"><i class="fa-solid fa-circle-check"></i> Published</span>
                     @elseif($house->status === 'verified')
@@ -81,12 +91,15 @@
     </x-slot>
 
     @push('head')
-        @if($house->latitude !== null && $house->longitude !== null)
-        <link
-            rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        />
-        @endif
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <style>
+            #mini-map {
+                z-index: 1;
+            }
+            .leaflet-popup-content-wrapper {
+                border-radius: 8px;
+            }
+        </style>
     @endpush
 
     {{-- FLASH SUCCESS MESSAGE --}}
@@ -94,6 +107,94 @@
         <div class="alert ok" style="margin-bottom: 24px;">
             <i class="fa-solid fa-circle-check fa-lg"></i>
             <div>{{ session('success') ?? session('ok') }}</div>
+        </div>
+    @endif
+
+    {{-- PERINGATAN REVISI / CATATAN ADMIN --}}
+    @if($house->revision_notes)
+        <div class="alert danger" style="margin-bottom: 24px; border-left: 5px solid #e11d48; background: #fff1f2; border-color: #fecaca; border-radius: var(--radius-lg); padding: 18px 20px;">
+            <div style="display:flex; align-items:flex-start; gap:14px; width:100%;">
+                <div style="width:40px; height:40px; border-radius:10px; background:#ffe4e6; color:#e11d48; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <h4 style="font-size:15px; font-weight:800; color:#9f1239; margin:0 0 2px 0;">
+                                {{ $house->status === 'revision' ? 'Catatan Revisi dari Admin / Verifikator' : 'Riwayat Catatan Revisi Sebelumnya' }}
+                            </h4>
+                            <p class="muted" style="font-size:12px; margin:0; color:#be123c;">
+                                @if($house->revised_at)
+                                    Diberikan pada {{ $house->revised_at->translatedFormat('d F Y, H:i') }} WIB
+                                @endif
+                                @if($house->reviser)
+                                    oleh <strong>{{ $house->reviser->name }}</strong> (Admin)
+                                @endif
+                            </p>
+                        </div>
+
+                        @if($house->status === 'revision')
+                            <span class="badge" style="background:#e11d48; color:#fff; font-weight:700; font-size:11px;">
+                                <i class="fa-solid fa-rotate-left"></i> Status: Perlu Revisi
+                            </span>
+                        @else
+                            <span class="badge" style="background:#fef3c7; color:#92400e; font-weight:700; font-size:11px;">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Catatan Sebelumnya
+                            </span>
+                        @endif
+                    </div>
+
+                    <div style="margin-top:12px; padding:12px 16px; background:#ffffff; border-radius:var(--radius-md); border:1px solid #fed7aa; color:#881337; font-size:13.5px; line-height:1.6; white-space:pre-wrap; font-weight:500;">{{ $house->revision_notes }}</div>
+
+                    @if($house->status === 'revision')
+                        @can('update', $house)
+                            <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <a href="{{ route('houses.edit', $house) }}" class="btn small danger" style="background:#e11d48; border-color:#e11d48; color:#fff;">
+                                    <i class="fa-solid fa-pen-to-square"></i> Mulai Perbaiki Data Sekarang
+                                </a>
+                                <span class="muted" style="font-size:12px; color:#be123c;">Setelah diperbaiki, kirim ulang data untuk diverifikasi kembali.</span>
+                            </div>
+                        @endcan
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ADMIN REVIEW ACTION BAR --}}
+    @if(auth()->check() && auth()->user()->hasRole('admin') && in_array($house->status, ['submitted', 'verified']))
+        <div class="card" style="margin-bottom: 24px; padding:16px 20px; background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left:4px solid var(--primary-600); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:10px; background:var(--primary-50); color:var(--primary-700); display:flex; align-items:center; justify-content:center; font-size:18px;">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+                <div>
+                    <h4 style="font-size:14px; font-weight:800; color:var(--slate-900); margin:0;">Aksi Review Verifikator</h4>
+                    <p class="muted" style="font-size:12px; margin:2px 0 0 0;">Status saat ini: <strong>{{ ucfirst($house->status) }}</strong>. Tinjau kelengkapan data lalu tentukan keputusan.</p>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center;">
+                @if($house->status === 'submitted')
+                    <form method="POST" action="{{ route('admin.review.verify', $house) }}" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn small primary" title="Verifikasi Data">
+                            <i class="fa-solid fa-check"></i> Verifikasi Data
+                        </button>
+                    </form>
+                @elseif($house->status === 'verified')
+                    <form method="POST" action="{{ route('admin.review.publish', $house) }}" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn small" style="background:#059669; color:#fff; border-color:#059669;" title="Terbitkan ke Peta Publik">
+                            <i class="fa-solid fa-globe"></i> Publikasikan
+                        </button>
+                    </form>
+                @endif
+
+                <button type="button" class="btn small danger" onclick="openRevisionModal('{{ route('admin.review.revision', $house) }}', '{{ $house->house_code }}', @js($house->revision_notes ?? ''))">
+                    <i class="fa-solid fa-rotate-left"></i> Minta Revisi
+                </button>
+            </div>
         </div>
     @endif
 
@@ -155,12 +256,20 @@
             <table style="font-size:13px;">
                 <tbody>
                     <tr>
-                        <td style="width:150px; color:var(--slate-500); font-weight:600;">Kode RTLH</td>
+                        <td style="width:160px; color:var(--slate-500); font-weight:600;">Kode RTLH</td>
                         <td><strong style="color:var(--slate-900); font-family:monospace;">{{ $house->house_code }}</strong></td>
                     </tr>
                     <tr>
-                        <td style="color:var(--slate-500); font-weight:600;">Wilayah</td>
-                        <td><span class="badge" style="background:var(--slate-100);">{{ $house->region?->name ?? '-' }}</span></td>
+                        <td style="color:var(--slate-500); font-weight:600;">NIK Kepala Keluarga</td>
+                        <td><strong style="color:var(--slate-900); font-family:monospace;">{{ $house->nik ?: '-' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--slate-500); font-weight:600;">Nama Penerima (CPBM)</td>
+                        <td><strong style="color:var(--slate-900);">{{ $house->head_of_household_name ?: '-' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--slate-500); font-weight:600;">Wilayah (Desa)</td>
+                        <td><span class="badge" style="background:var(--slate-100);"><i class="fa-solid fa-location-dot"></i> {{ $house->region?->name ?? '-' }}</span></td>
                     </tr>
                     <tr>
                         <td style="color:var(--slate-500); font-weight:600;">Alamat Lengkap</td>
@@ -179,8 +288,11 @@
                         <td>{{ $house->survey_year }}</td>
                     </tr>
                     <tr>
-                        <td style="color:var(--slate-500); font-weight:600;">Kawasan / Kepemilikan</td>
-                        <td>{{ $house->settlementCondition?->label ?? '-' }} &bull; {{ $house->ownershipStatus?->label ?? '-' }}</td>
+                        <td style="color:var(--slate-500); font-weight:600;">Status Kepemilikan</td>
+                        <td>
+                            <div>Rumah: <strong>{{ $house->ownershipStatus?->label ?? 'Milik Sendiri' }}</strong></div>
+                            <div style="font-size:12px; color:var(--slate-600); margin-top:2px;">Tanah: <strong>{{ $house->landStatus?->label ?? '-' }}</strong></div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -188,7 +300,7 @@
 
         {{-- GEOSPASIAL & MINI MAP --}}
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--slate-100); padding-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--slate-100); padding-bottom:12px; flex-wrap:wrap; gap:8px;">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <div class="stat-widget-icon emerald" style="width:34px; height:34px; font-size:15px; margin:0;">
                         <i class="fa-solid fa-map-location-dot"></i>
@@ -197,28 +309,144 @@
                         Lokasi Geospasial
                     </h3>
                 </div>
+
+                @if($house->latitude !== null && $house->longitude !== null)
+                    <a href="https://www.google.com/maps?q={{ $house->latitude }},{{ $house->longitude }}" target="_blank" rel="noopener noreferrer" class="btn small" style="font-size:11px; padding:4px 10px;" title="Buka lokasi di Google Maps">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Google Maps
+                    </a>
+                @endif
             </div>
 
             @if($house->latitude !== null && $house->longitude !== null)
-                <div id="mini-map" style="height:210px; width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-200); margin-bottom:14px;"></div>
+                <div id="mini-map" style="height:230px; width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-200); margin-bottom:14px;"></div>
 
                 <div style="display:flex; justify-content:space-between; gap:12px; background:var(--slate-50); padding:10px 14px; border-radius:var(--radius-md); font-size:12px;">
                     <div>
-                        <span class="muted">Lat:</span>
+                        <span class="muted">Latitude:</span>
                         <code style="font-weight:700; color:var(--slate-800);">{{ $house->latitude }}</code>
                     </div>
                     <div>
-                        <span class="muted">Lng:</span>
+                        <span class="muted">Longitude:</span>
                         <code style="font-weight:700; color:var(--slate-800);">{{ $house->longitude }}</code>
                     </div>
                 </div>
             @else
-                <div style="padding:48px 24px; text-align:center; background:var(--slate-50); border-radius:var(--radius-md);" class="muted">
+                <div style="padding:40px 24px; text-align:center; background:var(--slate-50); border-radius:var(--radius-md); border:1px dashed var(--slate-300);" class="muted">
                     <i class="fa-solid fa-location-pin-slash fa-2x" style="color:var(--slate-400); margin-bottom:10px;"></i>
-                    <p style="font-size:13px; margin:0;">Koordinat GPS belum diinput. Anda dapat memperbaruinya melalui form kondisi.</p>
+                    <p style="font-size:13px; color:var(--slate-700); margin:0 0 12px 0;">Titik koordinat GPS rumah belum diinput.</p>
+                    @can('update', $house)
+                        <a href="{{ route('houses.edit', $house) }}" class="btn small primary">
+                            <i class="fa-solid fa-location-crosshairs"></i> Input Titik Koordinat GPS
+                        </a>
+                    @endcan
                 </div>
             @endif
         </div>
+    </div>
+
+    {{-- CARD ANGGARAN, REALISASI & PROPOSAL USULAN --}}
+    <div class="card" style="margin-bottom: 24px; border-left: 4px solid {{ $house->realization_status === 'realized' ? '#10b981' : '#f59e0b' }};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--slate-100); padding-bottom:12px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="stat-widget-icon amber" style="width:36px; height:36px; font-size:16px; margin:0; background:{{ $house->realization_status === 'realized' ? '#dcfce7' : '#fef3c7' }}; color:{{ $house->realization_status === 'realized' ? '#15803d' : '#b45309' }};">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div>
+                    <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
+                        Sumber Anggaran, Realisasi & Berkas Proposal Usulan
+                    </h3>
+                    <p class="muted" style="margin:2px 0 0 0; font-size:12px;">Informasi pendanaan penanganan perbaikan dan administrasi usulan desa.</p>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+                @if($house->realization_status === 'realized')
+                    <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:800; font-size:13px; padding:6px 12px;">
+                        <i class="fa-solid fa-circle-check"></i> Sudah Terealisasi 
+                    </span>
+                    <button type="button" class="btn small" onclick="openRealizationModal()" style="font-size:12px; padding:6px 12px;" title="Ubah atau tinjau data realisasi">
+                        <i class="fa-solid fa-pen-to-square"></i> Kelola Realisasi
+                    </button>
+                @else
+                    <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde047; font-weight:800; font-size:13px; padding:6px 12px;">
+                        <i class="fa-solid fa-clock"></i> Belum Terealisasi 
+                    </span>
+                    <button type="button" class="btn small" style="background:#059669; color:#fff; border-color:#059669; font-size:12px; padding:6px 14px; font-weight:700;" onclick="openRealizationModal()" title="Tandai bantuan RTLH ini telah selesai direalisasikan">
+                        <i class="fa-solid fa-circle-check"></i> Tandai Sudah Terealisasi
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        @if($house->realization_status === 'realized')
+            <div style="margin-bottom:16px; padding:12px 16px; background:#f0fdf4; border-radius:var(--radius-md); border:1px solid #bbf7d0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; border-radius:50%; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-size:14px;">
+                        <i class="fa-solid fa-check-double"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:13px; font-weight:800; color:#166534;">
+                            Bantuan RTLH Telah Selesai Direalisasikan
+                        </div>
+                        <div class="muted" style="font-size:11.5px; color:#15803d;">
+                            @if($house->realized_at)
+                                Tanggal Realisasi: <strong>{{ $house->realized_at->translatedFormat('d F Y') }}</strong>
+                            @endif
+                            @if($house->realizer)
+                                &bull; Diverifikasi oleh: <strong>{{ $house->realizer->name }}</strong>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                @if($house->realization_notes)
+                    <div style="width:100%; font-size:12.5px; color:#14532d; background:#ffffff; padding:8px 12px; border-radius:6px; border:1px solid #dcfce7; margin-top:4px;">
+                        <strong>Catatan Penanganan:</strong> {{ $house->realization_notes }}
+                    </div>
+                @endif
+            </div>
+        @endif
+
+        <div class="grid3">
+            <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                <span class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Sumber Anggaran</span>
+                <div style="font-size:16px; font-weight:800; color:var(--slate-900); margin-top:4px;">
+                    <i class="fa-solid fa-wallet" style="color:#0284c7; margin-right:4px;"></i>
+                    {{ $house->funding_source ?: 'Belum ditentukan' }}
+                </div>
+            </div>
+
+            <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                <span class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Nilai Usulan / Anggaran</span>
+                <div style="font-size:18px; font-weight:900; color:#15803d; margin-top:4px;">
+                    @if($house->budget_amount)
+                        Rp {{ number_format((float)$house->budget_amount, 0, ',', '.') }}
+                    @else
+                        <span class="muted" style="font-size:14px; font-weight:600;">Belum dianggarkan</span>
+                    @endif
+                </div>
+            </div>
+
+            <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                <span class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Berkas Proposal Usulan</span>
+                <div style="margin-top:4px;">
+                    @if($house->proposal_document_path)
+                        <a href="{{ asset('storage/' . $house->proposal_document_path) }}" target="_blank" class="btn small primary" style="font-size:12px; padding:4px 10px;">
+                            <i class="fa-solid fa-file-arrow-down"></i> Unduh / Buka Dokumen
+                        </a>
+                    @else
+                        <span class="muted" style="font-size:13px;"><i class="fa-solid fa-file-excel"></i> Belum ada file usulan</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        @if($house->proposal_notes)
+            <div style="margin-top:14px; padding:10px 14px; background:#f8fafc; border-radius:8px; border:1px solid var(--slate-200); font-size:13px;">
+                <strong style="color:var(--slate-800);"><i class="fa-solid fa-comment-dots"></i> Catatan Usulan:</strong>
+                <span style="color:var(--slate-600); margin-left:6px;">{{ $house->proposal_notes }}</span>
+            </div>
+        @endif
     </div>
 
     {{-- KONDISI FISIK, SANITASI, UTILITAS --}}
@@ -227,7 +455,7 @@
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--slate-100); padding-bottom:8px;">
                 <h4 style="font-size:15px; font-weight:800; color:var(--slate-900); margin:0;">
-                    <i class="fa-solid fa-cubes text-emerald-600" style="color:#059669;"></i> Struktur Utama
+                    <i class="fa-solid fa-cubes text-emerald-600" style="color:#059669;"></i> Struktur Utama Bangunan
                 </h4>
                 @can('update', $house)
                     <a href="{{ route('houses.condition.edit', $house) }}" class="btn small" style="padding:2px 8px; font-size:11px;">Edit</a>
@@ -244,12 +472,19 @@
                     <strong>{{ $house->structure?->sloofCondition?->label ?: '-' }}</strong>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--slate-100); padding-bottom:4px;">
-                    <span class="muted">Kolom / Tiang:</span>
-                    <strong>{{ $house->structure?->columnCondition?->label ?: '-' }}</strong>
+                    <span class="muted">Kondisi Tiang:</span>
+                    <strong style="color:var(--primary-700);">{{ $house->structure?->columnCondition?->label ?: '-' }}</strong>
                 </div>
-                <div style="display:flex; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--slate-100); padding-bottom:4px;">
                     <span class="muted">Balok:</span>
                     <strong>{{ $house->structure?->beamCondition?->label ?: '-' }}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between;">
+                    <span class="muted">Rangka Atap:</span>
+                    <span>
+                        <strong>{{ $house->roof?->frameMaterial?->label ?: 'Kayu' }}</strong>
+                        <span class="muted">({{ $house->roof?->frameCondition?->label ?: '-' }})</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -275,7 +510,7 @@
                     <span>{{ $house->wall?->material?->label ?: '-' }} ({{ $house->wall?->condition?->label ?: '-' }})</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--slate-100); padding-bottom:4px;">
-                    <span class="muted">Atap:</span>
+                    <span class="muted">Penutup Atap:</span>
                     <span>{{ $house->roof?->material?->label ?: '-' }} ({{ $house->roof?->condition?->label ?: '-' }})</span>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
@@ -302,12 +537,12 @@
                     <strong>{{ $house->sanitation?->waterSource?->label ?: '-' }}</strong>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--slate-100); padding-bottom:4px;">
-                    <span class="muted">Jamban:</span>
-                    <strong>{{ $house->sanitation?->toilet_available ? 'Ada' : 'Tidak Punya' }} ({{ $house->sanitation?->toiletType?->label ?: '-' }})</strong>
+                    <span class="muted">Sanitasi Air Kotor:</span>
+                    <strong style="color:#d97706;">{{ $house->sanitation?->wastewaterDisposal?->label ?: '-' }}</strong>
                 </div>
                 <div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--slate-100); padding-bottom:4px;">
-                    <span class="muted">TPA Tinja:</span>
-                    <strong>{{ $house->sanitation?->fecalDisposalType?->label ?: '-' }}</strong>
+                    <span class="muted">Jamban:</span>
+                    <strong>{{ $house->sanitation?->toilet_available ? 'Ada' : 'Tidak Punya' }} ({{ $house->sanitation?->toiletType?->label ?: '-' }})</strong>
                 </div>
                 <div style="display:flex; justify-content:space-between;">
                     <span class="muted">Penerangan:</span>
@@ -511,6 +746,203 @@
         </div>
     @endif
 
+    @if(auth()->check() && auth()->user()->hasRole('admin'))
+        {{-- MODAL CATATAN REVISI ADMIN --}}
+        <div id="revision-modal" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title" style="display:none; position:fixed; inset:0; z-index:2000; padding:20px; background:rgba(15, 23, 42, 0.75); align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+            <div style="background:#ffffff; border-radius:var(--radius-xl); max-width:540px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid var(--slate-200); overflow:hidden;">
+                <div style="padding:20px 24px; border-bottom:1px solid var(--slate-200); background:#fff1f2; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:#ffe4e6; color:#e11d48; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </div>
+                        <div>
+                            <h3 id="revision-modal-title" style="font-size:16px; font-weight:800; color:#9f1239; margin:0;">
+                                Kembalikan untuk Revisi
+                            </h3>
+                            <p id="revision-house-code" class="muted" style="font-size:12px; margin:2px 0 0 0; font-family:monospace; color:#be123c;"></p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeRevisionModal()" style="border:none; background:none; color:var(--slate-400); font-size:18px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="revision-form" method="POST" action="">
+                    @csrf
+                    <div style="padding:24px;">
+                        <label for="revision_notes" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:8px;">
+                            Catatan Revisi / Instruksi Perbaikan <span style="color:#e11d48;">*</span>
+                        </label>
+                        <textarea 
+                            id="revision_notes" 
+                            name="revision_notes" 
+                            rows="4" 
+                            required 
+                            minlength="5"
+                            maxlength="3000"
+                            placeholder="Contoh: Foto tampak depan buram, tolong unggah ulang. Koordinat GPS perlu diperbaiki karena tidak sesuai dengan lokasi desa..."
+                            style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:12px; font-size:13px; font-family:inherit; resize:vertical; line-height:1.5; box-sizing:border-box;"
+                        ></textarea>
+                    </div>
+
+                    <div style="padding:16px 24px; background:var(--slate-50); border-top:1px solid var(--slate-200); display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" onclick="closeRevisionModal()" class="btn">
+                            Batal
+                        </button>
+                        <button type="submit" class="btn danger" style="background:#e11d48; border-color:#e11d48; color:#fff;">
+                            <i class="fa-solid fa-paper-plane"></i> Kirim Catatan Revisi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    {{-- MODAL KELOLA STATUS REALISASI RTLH --}}
+    <div id="realization-modal" role="dialog" aria-modal="true" aria-labelledby="realization-modal-title" style="display:none; position:fixed; inset:0; z-index:2000; padding:20px; background:rgba(15, 23, 42, 0.75); align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div style="background:#ffffff; border-radius:var(--radius-xl); max-width:580px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid var(--slate-200); overflow:hidden; max-height:92vh; display:flex; flex-direction:column;">
+            
+            {{-- MODAL HEADER --}}
+            <div style="padding:18px 24px; border-bottom:1px solid var(--slate-200); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:#dcfce7; color:#15803d; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 id="realization-modal-title" style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
+                            Pembaruan Status Realisasi RTLH
+                        </h3>
+                        <p class="muted" style="font-size:12px; margin:2px 0 0 0; font-family:monospace;">
+                            Kode RTLH: {{ $house->house_code }}
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRealizationModal()" style="border:none; background:none; color:var(--slate-400); font-size:18px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            {{-- MODAL BODY --}}
+            <form method="POST" action="{{ route('houses.realization.update', $house) }}" style="overflow-y:auto; flex:1;">
+                @csrf
+                <div style="padding:24px; display:flex; flex-direction:column; gap:18px;">
+                    
+                    {{-- PILIHAN STATUS REALISASI --}}
+                    <div>
+                        <label style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:8px;">
+                            Pilih Status Realisasi <span style="color:#e11d48;">*</span>
+                        </label>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <label id="modal-card-realized" onclick="setModalRealization('realized')" style="border:2px solid {{ $house->realization_status === 'realized' ? '#10b981' : 'var(--slate-200)' }}; background:{{ $house->realization_status === 'realized' ? '#f0fdf4' : '#fff' }}; border-radius:var(--radius-lg); padding:12px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.2s;">
+                                <input type="radio" name="realization_status" value="realized" id="modal_status_realized" @checked($house->realization_status === 'realized') style="accent-color:#16a34a;">
+                                <div>
+                                    <div style="font-size:13px; font-weight:800; color:#15803d;">
+                                        <i class="fa-solid fa-circle-check"></i> Sudah Terealisasi
+                                    </div>
+                                    <div class="muted" style="font-size:11px; margin-top:2px;">Bantuan selesai ditangani</div>
+                                </div>
+                            </label>
+
+                            <label id="modal-card-not-realized" onclick="setModalRealization('not_realized')" style="border:2px solid {{ $house->realization_status !== 'realized' ? '#f59e0b' : 'var(--slate-200)' }}; background:{{ $house->realization_status !== 'realized' ? '#fffbeb' : '#fff' }}; border-radius:var(--radius-lg); padding:12px; cursor:pointer; display:flex; align-items:center; gap:10px; transition:all 0.2s;">
+                                <input type="radio" name="realization_status" value="not_realized" id="modal_status_not_realized" @checked($house->realization_status !== 'realized') style="accent-color:#d97706;">
+                                <div>
+                                    <div style="font-size:13px; font-weight:800; color:#b45309;">
+                                        <i class="fa-solid fa-clock"></i> Belum Terealisasi
+                                    </div>
+                                    <div class="muted" style="font-size:11px; margin-top:2px;">Dalam antrian / usulan</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- SUMBER ANGGARAN --}}
+                    <div>
+                        <label for="modal_funding_source" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:6px;">
+                            Sumber Anggaran Penanganan
+                        </label>
+                        <input
+                            type="text"
+                            id="modal_funding_source"
+                            name="funding_source"
+                            value="{{ old('funding_source', $house->funding_source) }}"
+                            placeholder="Contoh: APBD Kabupaten Cirebon, DAK, BSPS, Baznas, CSR..."
+                            list="funding_sources_datalist"
+                            style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:10px 12px; font-size:13px; box-sizing:border-box;"
+                        >
+                        <datalist id="funding_sources_datalist">
+                            <option value="APBD Kabupaten Cirebon">
+                            <option value="APBD Provinsi Jawa Barat">
+                            <option value="APBN (BSPS / KemenPUPR)">
+                            <option value="Dana Alokasi Khusus (DAK)">
+                            <option value="BAZNAS">
+                            <option value="Corporate Social Responsibility (CSR)">
+                            <option value="Swadaya Masyarakat">
+                        </datalist>
+                    </div>
+
+                    {{-- NOMINAL ANGGARAN & TANGGAL REALISASI --}}
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <label for="modal_budget_amount" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:6px;">
+                                Nilai Anggaran (Rp)
+                            </label>
+                            <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                id="modal_budget_amount"
+                                name="budget_amount"
+                                value="{{ old('budget_amount', $house->budget_amount) }}"
+                                placeholder="Misal: 20000000"
+                                style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:10px 12px; font-size:13px; box-sizing:border-box;"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="modal_realized_at" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:6px;">
+                                Tanggal Realisasi
+                            </label>
+                            <input
+                                type="date"
+                                id="modal_realized_at"
+                                name="realized_at"
+                                value="{{ old('realized_at', $house->realized_at ? $house->realized_at->format('Y-m-d') : date('Y-m-d')) }}"
+                                style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:10px 12px; font-size:13px; box-sizing:border-box;"
+                            >
+                        </div>
+                    </div>
+
+                    {{-- CATATAN PELAKSANAAN / KETERANGAN --}}
+                    <div>
+                        <label for="modal_realization_notes" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:6px;">
+                            Catatan Pelaksanaan Realisasi
+                        </label>
+                        <textarea
+                            id="modal_realization_notes"
+                            name="realization_notes"
+                            rows="3"
+                            placeholder="Keterangan tambahan hasil monev atau serah terima bantuan..."
+                            style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:10px 12px; font-size:13px; font-family:inherit; resize:vertical; box-sizing:border-box;"
+                        >{{ old('realization_notes', $house->realization_notes) }}</textarea>
+                    </div>
+
+                </div>
+
+                {{-- MODAL FOOTER --}}
+                <div style="padding:16px 24px; background:var(--slate-50); border-top:1px solid var(--slate-200); display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="closeRealizationModal()" class="btn">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn primary" style="background:#059669; border-color:#059669; color:#fff;">
+                        <i class="fa-solid fa-check"></i> Simpan Status Realisasi
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
         @push('scripts')
         <script>
             function openPhotoPreview(source, caption) {
@@ -535,11 +967,121 @@
                 document.body.style.overflow = '';
             }
 
+            function openRevisionModal(actionUrl, houseCode, existingNotes) {
+                const modal = document.getElementById('revision-modal');
+                const form = document.getElementById('revision-form');
+                const codeEl = document.getElementById('revision-house-code');
+                const notesInput = document.getElementById('revision_notes');
+
+                if (!modal) return;
+                form.action = actionUrl;
+                codeEl.textContent = 'Kode RTLH: ' + houseCode;
+                notesInput.value = existingNotes || '';
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => notesInput.focus(), 50);
+            }
+
+            function closeRevisionModal() {
+                const modal = document.getElementById('revision-modal');
+                if (!modal) return;
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+
+            function openRealizationModal() {
+                const modal = document.getElementById('realization-modal');
+                if (!modal) return;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeRealizationModal() {
+                const modal = document.getElementById('realization-modal');
+                if (!modal) return;
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+
+            function setModalRealization(status) {
+                const radioRealized = document.getElementById('modal_status_realized');
+                const radioNotRealized = document.getElementById('modal_status_not_realized');
+                const cardRealized = document.getElementById('modal-card-realized');
+                const cardNotRealized = document.getElementById('modal-card-not-realized');
+
+                if (status === 'realized') {
+                    if (radioRealized) radioRealized.checked = true;
+                    if (cardRealized) {
+                        cardRealized.style.borderColor = '#10b981';
+                        cardRealized.style.background = '#f0fdf4';
+                    }
+                    if (cardNotRealized) {
+                        cardNotRealized.style.borderColor = 'var(--slate-200)';
+                        cardNotRealized.style.background = '#fff';
+                    }
+                } else {
+                    if (radioNotRealized) radioNotRealized.checked = true;
+                    if (cardNotRealized) {
+                        cardNotRealized.style.borderColor = '#f59e0b';
+                        cardNotRealized.style.background = '#fffbeb';
+                    }
+                    if (cardRealized) {
+                        cardRealized.style.borderColor = 'var(--slate-200)';
+                        cardRealized.style.background = '#fff';
+                    }
+                }
+            }
+
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closePhotoPreview();
+                    closeRevisionModal();
+                    closeRealizationModal();
                 }
             });
         </script>
+
+        @if($house->latitude !== null && $house->longitude !== null)
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const mapEl = document.getElementById('mini-map');
+                if (!mapEl || typeof L === 'undefined') return;
+
+                const lat = {{ (float) $house->latitude }};
+                const lng = {{ (float) $house->longitude }};
+
+                const miniMap = L.map('mini-map', {
+                    zoomControl: true,
+                    scrollWheelZoom: false
+                }).setView([lat, lng], 16);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap | Kota Cirebon'
+                }).addTo(miniMap);
+
+                const customIcon = L.divIcon({
+                    className: 'custom-house-pin',
+                    html: '<div style="background:#059669; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; border:3px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.3); font-size:13px;"><i class=\"fa-solid fa-house\"></i></div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                });
+
+                const marker = L.marker([lat, lng], { icon: customIcon }).addTo(miniMap);
+                marker.bindPopup(`
+                    <div style="font-family:sans-serif; font-size:12px; line-height:1.4;">
+                        <strong style="color:#0f172a; font-family:monospace;">{{ $house->house_code }}</strong><br>
+                        <span style="color:#475569;">{{ addslashes($house->head_of_household_name ? 'CPBM: ' . $house->head_of_household_name : ($house->address ?: ($house->region?->name ?? 'Kabupaten Cirebon'))) }}</span>
+                    </div>
+                `).openPopup();
+
+                setTimeout(function () {
+                    miniMap.invalidateSize();
+                }, 300);
+            });
+        </script>
+        @endif
         @endpush
 </x-app-layout>

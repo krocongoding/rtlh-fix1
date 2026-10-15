@@ -17,26 +17,91 @@
         </div>
     </x-slot>
 
+    {{-- METRIK REKAP REALISASI DESA & DAERAH --}}
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="card" style="padding: 18px 20px; display:flex; align-items:center; gap:16px;">
+            <div style="width:48px; height:48px; border-radius:12px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-house-chimney"></i>
+            </div>
+            <div>
+                <span class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Total Basis Data RTLH</span>
+                <div style="font-size:24px; font-weight:900; color:var(--slate-900);">{{ number_format($totalHouses ?? $houses->total()) }} <span style="font-size:13px; font-weight:600; color:var(--slate-500);">Unit</span></div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 18px 20px; display:flex; align-items:center; gap:16px; border-left: 4px solid #10b981;">
+            <div style="width:48px; height:48px; border-radius:12px; background:#dcfce7; color:#16a34a; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#15803d;">Sudah Terealisasi </span>
+                <div style="font-size:24px; font-weight:900; color:#15803d;">{{ number_format($realizedCount ?? 0) }} <span style="font-size:13px; font-weight:600; color:#16a34a;">Unit</span></div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 18px 20px; display:flex; align-items:center; gap:16px; border-left: 4px solid #f59e0b;">
+            <div style="width:48px; height:48px; border-radius:12px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:22px;">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#b45309;">Belum Terealisasi</span>
+                <div style="font-size:24px; font-weight:900; color:#b45309;">{{ number_format($notRealizedCount ?? 0) }} <span style="font-size:13px; font-weight:600; color:#d97706;">Unit</span></div>
+            </div>
+        </div>
+    </div>
+
     {{-- SEARCH & FILTER CARD --}}
     <div class="card" style="margin-bottom: 24px;">
         <form method="GET" action="{{ route('houses.index') }}">
-            <div class="toolbar">
-                <div style="flex:1; min-width:260px; position:relative;">
+            <div class="toolbar" style="flex-wrap:wrap; gap:12px;">
+                <div style="flex:2; min-width:260px; position:relative;">
                     <input
                         type="text"
                         name="search"
                         value="{{ request('search') }}"
-                        placeholder="Cari kode rumah, alamat, atau blok..."
+                        placeholder="Cari NIK, Nama Kepala Keluarga, Kode RTLH, atau Alamat..."
                         style="padding-left:36px;"
                     >
                     <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--slate-400);"></i>
                 </div>
 
+                @if(isset($villages) && $villages->isNotEmpty())
+                    <div style="flex:1; min-width:180px;">
+                        <select name="region_id" style="width:100%; height:42px; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:0 12px; font-size:13px; background:#fff;">
+                            <option value="">-- Semua Kelurahan --</option>
+                            @foreach($villages as $vil)
+                                <option value="{{ $vil->id }}" @selected(request('region_id') == $vil->id)>
+                                    Kelurahan {{ $vil->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <div style="flex:1; min-width:180px;">
+                    <select name="realization_status" style="width:100%; height:42px; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:0 12px; font-size:13px; background:#fff;">
+                        <option value="">-- Semua Status Realisasi --</option>
+                        <option value="realized" @selected(request('realization_status') === 'realized')>Sudah Terealisasi</option>
+                        <option value="not_realized" @selected(request('realization_status') === 'not_realized')>Belum Terealisasi</option>
+                    </select>
+                </div>
+
+                <div style="flex:1; min-width:170px;">
+                    <select name="status" style="width:100%; height:42px; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:0 12px; font-size:13px; background:#fff;">
+                        <option value="">-- Semua Status Alur --</option>
+                        <option value="draft" @selected(request('status') === 'draft')>Draft</option>
+                        <option value="submitted" @selected(request('status') === 'submitted')>Menunggu Review</option>
+                        <option value="revision" @selected(request('status') === 'revision')>Perlu Revisi</option>
+                        <option value="verified" @selected(request('status') === 'verified')>Terverifikasi</option>
+                        <option value="published" @selected(request('status') === 'published')>Published</option>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn primary">
-                    <i class="fa-solid fa-magnifying-glass"></i> Cari
+                    <i class="fa-solid fa-magnifying-glass"></i> Filter
                 </button>
 
-                @if(request('search'))
+                @if(request()->hasAny(['search', 'region_id', 'realization_status', 'status']))
                     <a href="{{ route('houses.index') }}" class="btn">
                         <i class="fa-solid fa-rotate-left"></i> Reset
                     </a>
@@ -50,8 +115,9 @@
         <div style="padding: 18px 24px; border-bottom: 1px solid var(--slate-200); background: var(--slate-50); display:flex; justify-content:space-between; align-items:center;">
             <div>
                 <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin:0;">
-                    Daftar Unit Rumah
+                    Daftar Unit Rumah RTLH
                 </h3>
+                <p class="muted" style="margin:2px 0 0 0; font-size:12px;">Monitoring data CPBM, kondisi rumah, dan realisasi anggaran per kelurahan.</p>
             </div>
             <span class="badge published">
                 Total {{ number_format($houses->total()) }} Unit
@@ -62,13 +128,14 @@
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 50px;">No</th>
-                        <th style="width: 150px;">Kode Rumah</th>
-                        <th>Wilayah</th>
+                        <th style="width: 45px;">No</th>
+                        <th style="width: 150px;">Kode RTLH</th>
+                        <th>Calon Penerima (CPBM)</th>
+                        <th>Kelurahan</th>
                         <th>Alamat / Blok</th>
                         <th>Tahun</th>
-                        <th>Status</th>
-                        <th style="text-align: right; width: 140px;">Aksi</th>
+                        <th>Status Realisasi</th>
+                        <th style="text-align: right; width: 120px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,9 +143,48 @@
                         <tr>
                             <td class="muted">{{ $houses->firstItem() + $loop->index }}</td>
                             <td>
-                                <strong style="font-family:monospace; font-size:14px; color:var(--slate-900);">
+                                <strong style="font-family:monospace; font-size:13px; color:var(--slate-900);">
                                     {{ $house->house_code }}
                                 </strong>
+                                @if($house->status === 'revision')
+                                    <div style="margin-top:4px;">
+                                        <span class="badge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; font-size:10px; font-weight:700;" title="{{ $house->revision_notes ? 'Catatan: ' . $house->revision_notes : 'Perlu revisi' }}">
+                                            <i class="fa-solid fa-rotate-left"></i> Perlu Revisi
+                                        </span>
+                                    </div>
+                                @elseif($house->status === 'submitted')
+                                    <div style="margin-top:4px;">
+                                        <span class="badge submitted" style="font-size:10px;">
+                                            <i class="fa-solid fa-hourglass-half"></i> Review
+                                        </span>
+                                    </div>
+                                @elseif($house->status === 'verified')
+                                    <div style="margin-top:4px;">
+                                        <span class="badge" style="background:#ede9fe; color:#6d28d9; font-size:10px;">
+                                            <i class="fa-solid fa-check"></i> Verified
+                                        </span>
+                                    </div>
+                                @elseif($house->status === 'published')
+                                    <div style="margin-top:4px;">
+                                        <span class="badge published" style="font-size:10px;">
+                                            <i class="fa-solid fa-globe"></i> Published
+                                        </span>
+                                    </div>
+                                @elseif($house->status === 'draft')
+                                    <div style="margin-top:4px;">
+                                        <span class="badge" style="background:var(--slate-100); color:var(--slate-600); font-size:10px;">
+                                            <i class="fa-solid fa-file-pen"></i> Draft
+                                        </span>
+                                    </div>
+                                @endif
+                            </td>
+                            <td>
+                                @if($house->head_of_household_name || $house->nik)
+                                    <div style="font-weight:700; color:var(--slate-900);">{{ $house->head_of_household_name ?: 'Nama belum diisi' }}</div>
+                                    <div class="muted" style="font-size:11px; font-family:monospace;">NIK: {{ $house->nik ?: '-' }}</div>
+                                @else
+                                    <span class="muted" style="font-size:12px;">-</span>
+                                @endif
                             </td>
                             <td>
                                 <span class="badge" style="background:var(--slate-100); color:var(--slate-700);">
@@ -87,6 +193,9 @@
                             </td>
                             <td>
                                 {{ $house->address ?: ($house->block ? 'Blok ' . $house->block : '-') }}
+                                @if($house->rt || $house->rw)
+                                    <span class="muted" style="font-size:11px; display:block;">RT {{ $house->rt ?? '-' }} / RW {{ $house->rw ?? '-' }}</span>
+                                @endif
                             </td>
                             <td>
                                 <span class="badge" style="background:#e0f2fe; color:#0369a1;">
@@ -94,16 +203,14 @@
                                 </span>
                             </td>
                             <td>
-                                @if($house->status === 'published')
-                                    <span class="badge published"><i class="fa-solid fa-check"></i> Published</span>
-                                @elseif($house->status === 'verified')
-                                    <span class="badge" style="background:#ede9fe; color:#6d28d9;"><i class="fa-solid fa-circle-check"></i> Verified</span>
-                                @elseif($house->status === 'submitted')
-                                    <span class="badge submitted"><i class="fa-solid fa-hourglass-half"></i> Submitted</span>
-                                @elseif($house->status === 'revision')
-                                    <span class="badge revision"><i class="fa-solid fa-rotate-left"></i> Revisi</span>
+                                @if($house->realization_status === 'realized')
+                                    <span class="badge" style="background:#dcfce7; color:#15803d; border:1px solid #86efac; font-weight:700; font-size:12px;">
+                                        <i class="fa-solid fa-circle-check"></i> Sudah Terealisasi
+                                    </span>
                                 @else
-                                    <span class="badge draft">{{ ucfirst($house->status) }}</span>
+                                    <span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde047; font-weight:700; font-size:12px;">
+                                        <i class="fa-solid fa-clock"></i> Belum Terealisasi
+                                    </span>
                                 @endif
                             </td>
                             <td style="text-align: right;">
@@ -114,7 +221,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" style="text-align:center; padding:48px 24px;" class="muted">
+                            <td colspan="8" style="text-align:center; padding:48px 24px;" class="muted">
                                 <i class="fa-solid fa-folder-open fa-2x" style="color:var(--slate-300); margin-bottom:10px;"></i>
                                 <p>Belum ada data unit rumah RTLH yang tercatat.</p>
                             </td>

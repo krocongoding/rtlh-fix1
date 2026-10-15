@@ -1,4 +1,4 @@
-@props(['title' => 'Portal RTLH Cirebon'])
+@props(['title' => 'Workspace Petugas | RTLH Cirebon'])
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Portal RTLH Cirebon') }}</title>
+    <title>{{ $title ?? config('app.name', 'Workspace Petugas RTLH Cirebon') }}</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,13 +26,12 @@
     <script>if(localStorage.getItem('rtlh-dark-mode')==='1'){document.documentElement.classList.add('dark');}</script>
 </head>
 <body>
-    {{-- BACKDROP OVERLAY FOR DRAWER --}}
-    {{-- TOPBAR NAVIGATION — LAPA NINJA STYLE --}}
+    {{-- TOPBAR NAVIGATION — WORKSPACE PETUGAS --}}
     <header class="topbar">
         <div class="container nav">
 
             {{-- LEFT: LOGO & BRANDING --}}
-            <a href="{{ auth()->check() ? route('dashboard') : route('public.home') }}" class="brand-wrapper">
+            <a href="{{ route('dashboard') }}" class="brand-wrapper" title="Menuju Dashboard">
                 <div class="lapa-brand-logo">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo RTLH">
                 </div>
@@ -40,75 +39,77 @@
                     <span class="brand-title">
                         rtlh<span style="color:#38bdf8;">.</span>cirebon
                     </span>
-                    <span class="brand-subtitle">
-                        Sistem Informasi Geografis
+                    <span class="brand-subtitle" style="color:#38bdf8; display:flex; align-items:center; gap:4px; font-weight:700;">
+                        <i class="fa-solid fa-shield-halved" style="font-size:9px;"></i>
+                        Workspace Petugas
                     </span>
                 </div>
             </a>
 
-            {{-- CENTER: HORIZONTAL LINKS (Role-based Navigation) --}}
+            {{-- CENTER: WORKSPACE NAVIGATION LINKS (ADMIN & SURVEYOR) --}}
             <nav class="nav-center">
-                {{-- Dropdown: WebGIS (Semua role & publik) --}}
-                <div class="lapa-dropdown">
-                    <a href="{{ route('public.map') }}" class="lapa-nav-link {{ request()->routeIs('public.map') ? 'active' : '' }}">
-                        <span>WebGIS</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size:10px; opacity:0.7;"></i>
-                    </a>
-                    <div class="lapa-dropdown-menu">
-                        <a href="{{ route('public.map') }}" class="lapa-dropdown-item">
-                            <i class="fa-solid fa-map-location-dot" style="color:#38bdf8; width:16px;"></i>
-                            <span>Peta GIS Tematik</span>
-                        </a>
-                        <a href="{{ route('public.map') }}#heatmap" class="lapa-dropdown-item">
-                            <i class="fa-solid fa-fire-flame-curved" style="color:#f43f5e; width:16px;"></i>
-                            <span>Heatmap Kerentanan</span>
-                        </a>
-                    </div>
-                </div>
-
-                {{-- Khusus Admin & Surveyor: Data RTLH dan Wilayah --}}
                 @auth
                     @if(auth()->user()->hasRole('admin'))
-                        <a href="{{ route('houses.index') }}" class="lapa-nav-link {{ request()->routeIs('houses.*') ? 'active' : '' }}">
-                            Data RTLH
+                        <a href="{{ route('admin.dashboard') }}" class="lapa-nav-link {{ request()->routeIs('admin.dashboard') || (request()->routeIs('dashboard') && auth()->user()->hasRole('admin')) ? 'active' : '' }}">
+                            <i class="fa-solid fa-gauge-high" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Dashboard</span>
                         </a>
+
+                        <a href="{{ route('houses.index') }}" class="lapa-nav-link {{ request()->routeIs('houses.index') || (request()->routeIs('houses.*') && !request()->routeIs('houses.create')) ? 'active' : '' }}">
+                            <i class="fa-solid fa-house-chimney" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Data RTLH</span>
+                        </a>
+
+                        <a href="{{ route('houses.create') }}" class="lapa-nav-link {{ request()->routeIs('houses.create') ? 'active' : '' }}">
+                            <i class="fa-solid fa-plus-circle" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Input Baru</span>
+                        </a>
+
                         <a href="{{ route('admin.review.index') }}" class="lapa-nav-link {{ request()->routeIs('admin.review.*') ? 'active' : '' }}">
-                            Verifikasi
+                            <i class="fa-solid fa-clipboard-check" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Verifikasi</span>
                         </a>
+
                         <a href="{{ route('admin.surveyors.index') }}" class="lapa-nav-link {{ request()->routeIs('admin.surveyors.*') ? 'active' : '' }}">
-                            Surveyor
+                            <i class="fa-solid fa-users-gear" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Surveyor</span>
                         </a>
+
                         <a href="{{ route('regions.index') }}" class="lapa-nav-link {{ request()->routeIs('regions.*') ? 'active' : '' }}">
-                            Wilayah
+                            <i class="fa-solid fa-map-location-dot" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Wilayah</span>
                         </a>
                     @elseif(auth()->user()->hasRole('surveyor'))
-                        <a href="{{ route('houses.index') }}" class="lapa-nav-link {{ request()->routeIs('houses.*') ? 'active' : '' }}">
-                            Data RTLH
+                        <a href="{{ route('surveyor.dashboard') }}" class="lapa-nav-link {{ request()->routeIs('surveyor.dashboard') || (request()->routeIs('dashboard') && auth()->user()->hasRole('surveyor')) ? 'active' : '' }}">
+                            <i class="fa-solid fa-gauge" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Dashboard</span>
                         </a>
+
+                        <a href="{{ route('houses.index') }}" class="lapa-nav-link {{ request()->routeIs('houses.index') || (request()->routeIs('houses.*') && !request()->routeIs('surveyor.rtlh.create')) ? 'active' : '' }}">
+                            <i class="fa-solid fa-folder-tree" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Data RTLH</span>
+                        </a>
+
                         <a href="{{ route('surveyor.rtlh.create') }}" class="lapa-nav-link {{ request()->routeIs('surveyor.rtlh.create') ? 'active' : '' }}">
-                            Input Baru
+                            <i class="fa-solid fa-plus-circle" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Input RTLH</span>
+                        </a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="lapa-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <i class="fa-solid fa-gauge-high" style="font-size:12px; opacity:0.8;"></i>
+                            <span>Dashboard</span>
                         </a>
                     @endif
                 @endauth
-
-                {{-- Menu Terbuka untuk Publik & Semua Pengguna --}}
-                <a href="{{ route('public.statistics') }}" class="lapa-nav-link {{ request()->routeIs('public.statistics') ? 'active' : '' }}">
-                    Statistik
-                </a>
-
-                <a href="{{ route('public.datasets') }}" class="lapa-nav-link {{ request()->routeIs('public.datasets') ? 'active' : '' }}">
-                    Unduh CSV
-                </a>
             </nav>
 
-            {{-- RIGHT: SEARCH PILL, PROFILE / SIGN IN, AND DARK TOGGLE --}}
+            {{-- RIGHT: SHORTCUT TO PUBLIC WEB, USER PROFILE, AND CONTROLS --}}
             <div style="display:flex; align-items:center; gap:12px;">
 
-                {{-- Search Pill (Lapa style) --}}
-                <a href="{{ route('public.datasets') }}" class="lapa-search-pill" title="Cari data RTLH">
-                    <i class="fa-solid fa-magnifying-glass" style="font-size:12px;"></i>
-                    <span class="search-text">Search...</span>
-                    <span class="search-badge">⌘K</span>
+                {{-- SHORTCUT TO PUBLIC SITE --}}
+                <a href="{{ route('public.home') }}" target="_blank" class="lapa-btn-public-portal" title="Buka Portal Publik Warga di Tab Baru">
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px;"></i>
+                    <span>Lihat Web Publik</span>
                 </a>
 
                 @auth
@@ -122,10 +123,8 @@
                                 <span class="role-pill role-admin">Admin</span>
                             @elseif(auth()->user()->hasRole('surveyor'))
                                 <span class="role-pill role-surveyor">Surveyor</span>
-                            @elseif(auth()->user()->hasRole('viewer'))
-                                <span class="role-pill role-viewer">Viewer</span>
                             @else
-                                <span class="role-pill">User</span>
+                                <span class="role-pill">Petugas</span>
                             @endif
                         </div>
                     </div>
@@ -141,7 +140,6 @@
                         </button>
                     </form>
                 @else
-                    {{-- Vibrant Purple Pill Button (Lapa Sign In) --}}
                     <a href="{{ route('login') }}" class="lapa-btn-signin">
                         Sign in
                     </a>
@@ -160,56 +158,61 @@
 
         </div>
 
-        {{-- MOBILE COLLAPSIBLE DROPDOWN MENU --}}
+        {{-- MOBILE COLLAPSIBLE DROPDOWN MENU FOR WORKSPACE --}}
         <div id="lapaMobileMenu" class="lapa-mobile-menu">
-            <a href="{{ route('public.home') }}" class="lapa-mobile-link {{ request()->routeIs('public.home') ? 'active' : '' }}">
-                <i class="fa-solid fa-house"></i> Beranda Publik
-            </a>
-            <a href="{{ route('public.map') }}" class="lapa-mobile-link {{ request()->routeIs('public.map') ? 'active' : '' }}">
-                <i class="fa-solid fa-map-location-dot"></i> Peta WebGIS Tematik
-            </a>
             @auth
                 @if(auth()->user()->hasRole('admin'))
                     <a href="{{ route('admin.dashboard') }}" class="lapa-mobile-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                         <i class="fa-solid fa-gauge-high"></i> Dashboard Admin
                     </a>
-                    <a href="{{ route('houses.index') }}" class="lapa-mobile-link {{ request()->routeIs('houses.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-folder-tree"></i> Basis Data RTLH
+                    <a href="{{ route('houses.index') }}" class="lapa-mobile-link {{ request()->routeIs('houses.index') ? 'active' : '' }}">
+                        <i class="fa-solid fa-house-chimney"></i> Basis Data RTLH
+                    </a>
+                    <a href="{{ route('houses.create') }}" class="lapa-mobile-link {{ request()->routeIs('houses.create') ? 'active' : '' }}">
+                        <i class="fa-solid fa-plus-circle"></i> Input RTLH Baru
                     </a>
                     <a href="{{ route('admin.review.index') }}" class="lapa-mobile-link {{ request()->routeIs('admin.review.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-clipboard-check"></i> Review & Approval
+                        <i class="fa-solid fa-clipboard-check"></i> Review & Verifikasi
                     </a>
                     <a href="{{ route('admin.surveyors.index') }}" class="lapa-mobile-link {{ request()->routeIs('admin.surveyors.*') ? 'active' : '' }}">
                         <i class="fa-solid fa-users-gear"></i> Kelola Surveyor
                     </a>
                     <a href="{{ route('regions.index') }}" class="lapa-mobile-link {{ request()->routeIs('regions.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-map-pin"></i> Wilayah Administratif
+                        <i class="fa-solid fa-map-location-dot"></i> Wilayah Administratif
                     </a>
                 @elseif(auth()->user()->hasRole('surveyor'))
                     <a href="{{ route('surveyor.dashboard') }}" class="lapa-mobile-link {{ request()->routeIs('surveyor.dashboard') ? 'active' : '' }}">
                         <i class="fa-solid fa-gauge"></i> Workspace Surveyor
                     </a>
-                    <a href="{{ route('houses.index') }}" class="lapa-mobile-link {{ request()->routeIs('houses.*') ? 'active' : '' }}">
+                    <a href="{{ route('houses.index') }}" class="lapa-mobile-link {{ request()->routeIs('houses.index') ? 'active' : '' }}">
                         <i class="fa-solid fa-folder-tree"></i> Data RTLH Saya
                     </a>
                     <a href="{{ route('surveyor.rtlh.create') }}" class="lapa-mobile-link {{ request()->routeIs('surveyor.rtlh.create') ? 'active' : '' }}">
                         <i class="fa-solid fa-plus-circle"></i> Input RTLH Baru
                     </a>
                 @endif
-            @endauth
-            <a href="{{ route('public.statistics') }}" class="lapa-mobile-link {{ request()->routeIs('public.statistics') ? 'active' : '' }}">
-                <i class="fa-solid fa-chart-pie"></i> Statistik & Grafik
-            </a>
-            <a href="{{ route('public.datasets') }}" class="lapa-mobile-link {{ request()->routeIs('public.datasets') ? 'active' : '' }}">
-                <i class="fa-solid fa-database"></i> Katalog Open Data
-            </a>
-            @guest
+
+                <div style="padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); margin-top:8px;">
+                    <a href="{{ route('public.home') }}" target="_blank" class="lapa-mobile-link" style="color:#38bdf8;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Lihat Portal Publik
+                    </a>
+                    <a href="{{ route('profile.edit') }}" class="lapa-mobile-link">
+                        <i class="fa-solid fa-user-gear"></i> Pengaturan Profil
+                    </a>
+                    <form method="POST" action="{{ route('logout') }}" style="margin-top:6px;">
+                        @csrf
+                        <button type="submit" class="lapa-mobile-link" style="width:100%; background:none; border:none; text-align:left; cursor:pointer; color:#f87171;">
+                            <i class="fa-solid fa-right-from-bracket"></i> Keluar
+                        </button>
+                    </form>
+                </div>
+            @else
                 <div style="padding-top:10px;">
                     <a href="{{ route('login') }}" class="lapa-btn-signin" style="width:100%; justify-content:center;">
                         Sign in / Masuk Petugas
                     </a>
                 </div>
-            @endguest
+            @endauth
         </div>
     </header>
 
@@ -236,13 +239,30 @@
             </div>
         @endif
 
+        @if(session('status'))
+            <div class="alert info">
+                <i class="fa-solid fa-circle-info fa-lg"></i>
+                <div>{{ session('status') }}</div>
+            </div>
+        @endif
+
         {{ $slot }}
     </main>
 
-    {{-- Footer --}}
-    <footer class="footer">
-        <div class="container" style="text-align:center;">
-            <div>&copy; {{ date('Y') }} Pemerintah Kabupaten Cirebon • Dinas Perumahan, Kawasan Permukiman dan Pertanahan</div>
+    {{-- Backoffice Workspace Footer --}}
+    <footer class="footer" style="padding: 24px 0; margin-top:auto;">
+        <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; font-size:13px; color:#64748b;">
+            <div>
+                &copy; {{ date('Y') }} <strong style="color:#cbd5e1;">Pemerintah Kabupaten Cirebon</strong> &bull; DPKPP Workspace Petugas
+            </div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <a href="{{ route('public.home') }}" target="_blank" style="color:#38bdf8; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">
+                    <i class="fa-solid fa-globe"></i> Portal Publik
+                </a>
+                <a href="{{ route('profile.edit') }}" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:5px;">
+                    <i class="fa-solid fa-user-gear"></i> Profil
+                </a>
+            </div>
         </div>
     </footer>
 

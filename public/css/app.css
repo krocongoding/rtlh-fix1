@@ -379,6 +379,51 @@ body {
   transform: translateY(-1px);
 }
 
+/* Quick Portal Switcher Buttons */
+.lapa-btn-workspace {
+  background: rgba(14, 165, 233, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 6px 16px !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  transition: all 0.18s ease !important;
+}
+
+.lapa-btn-workspace:hover {
+  background: #0ea5e9 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+.lapa-btn-public-portal {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.lapa-btn-public-portal:hover {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
 /* Mobile Toggle & Menu */
 .lapa-mobile-toggle {
   display: none;

@@ -14,7 +14,7 @@ class HouseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = House::with('region')
+        $query = House::with(['region'])
             ->latest('id');
 
         if ($request->filled('search')) {
@@ -22,15 +22,56 @@ class HouseController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('house_code', 'ilike', "%{$search}%")
-                    ->orWhere('address', 'ilike', "%{$search}%");
+                    ->orWhere('address', 'ilike', "%{$search}%")
+                    ->orWhere('nik', 'ilike', "%{$search}%")
+                    ->orWhere('head_of_household_name', 'ilike', "%{$search}%");
             });
+        }
+
+        if ($request->filled('region_id')) {
+            $query->where('region_id', $request->integer('region_id'));
+        }
+
+        if ($request->filled('realization_status')) {
+            $status = $request->string('realization_status')->toString();
+            if ($status === 'realized') {
+                $query->where('realization_status', 'realized');
+            } elseif ($status === 'not_realized') {
+                $query->where(function ($q) {
+                    $q->where('realization_status', '!=', 'realized')
+                        ->orWhereNull('realization_status');
+                });
+            }
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status')->toString());
         }
 
         $houses = $query
             ->paginate(15)
             ->withQueryString();
 
-        return view('houses.index', compact('houses'));
+        $totalHouses = House::count();
+        $realizedCount = House::where('realization_status', 'realized')->count();
+        $notRealizedCount = House::where(function ($q) {
+            $q->where('realization_status', '!=', 'realized')
+                ->orWhereNull('realization_status');
+        })->count();
+
+        $villages = Region::kotaCirebon()
+            ->whereIn('type', ['village', 'desa'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('houses.index', compact(
+            'houses',
+            'totalHouses',
+            'realizedCount',
+            'notRealizedCount',
+            'villages'
+        ));
     }
 
     public function create()
@@ -45,9 +86,9 @@ class HouseController extends Controller
         ->get()
         ->keyBy('code');
 
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
-            ->orderBy('level')
+            ->whereIn('type', ['village', 'desa'])
             ->orderBy('name')
             ->get();
 
@@ -109,9 +150,9 @@ class HouseController extends Controller
         ->get()
         ->keyBy('code');
 
-        $regions = Region::query()
+        $regions = Region::kotaCirebon()
             ->where('is_active', true)
-            ->orderBy('level')
+            ->whereIn('type', ['village', 'desa'])
             ->orderBy('name')
             ->get();
 
@@ -164,10 +205,12 @@ class HouseController extends Controller
             'floor.condition',
             'wall.material',
             'wall.condition',
+            'roof.frameMaterial',
             'roof.frameCondition',
             'roof.material',
             'roof.condition',
             'sanitation.waterSource',
+            'sanitation.wastewaterDisposal',
             'sanitation.toiletType',
             'sanitation.fecalDisposalType',
             'utility.lightingSource',

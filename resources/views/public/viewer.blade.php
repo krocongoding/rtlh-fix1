@@ -1,4 +1,4 @@
-<x-layouts.app title="Viewer & Eksplorasi Data">
+<x-layouts.public title="Viewer & Eksplorasi Data">
 
     <div class="pagehead">
         <div>
@@ -70,4 +70,4 @@
         </div>
     </div>
 
-</x-layouts.app>
+</x-layouts.public>

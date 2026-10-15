@@ -1,4 +1,4 @@
-<x-layouts.app title="Statistik & Analitik RTLH">
+<x-layouts.public title="Statistik & Analitik RTLH">
 
     <div class="pagehead">
         <div>
@@ -387,4 +387,4 @@
         });
     </script>
 
-</x-layouts.app>
+</x-layouts.public>

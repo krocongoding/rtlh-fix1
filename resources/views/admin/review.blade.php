@@ -21,6 +21,28 @@
         </div>
     </div>
 
+    {{-- FLASH MESSAGES & VALIDATION ERRORS --}}
+    @if(session('ok') || session('success'))
+        <div class="alert ok" style="margin-bottom: 20px;">
+            <i class="fa-solid fa-circle-check fa-lg"></i>
+            <div>{{ session('ok') ?? session('success') }}</div>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert danger" style="margin-bottom: 20px;">
+            <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
+            <div>
+                <strong>Gagal memproses aksi:</strong>
+                <ul style="margin:4px 0 0 16px; padding:0;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
     {{-- TABLE DATA REVIEW --}}
     <div class="card" style="padding:0; overflow:hidden;">
         <div style="padding: 20px 24px; border-bottom: 1px solid var(--slate-200); background: var(--slate-50); display:flex; justify-content:space-between; align-items:center;">
@@ -88,6 +110,14 @@
                                         {{ ucfirst($house->status) }}
                                     </span>
                                 @endif
+
+                                @if($house->revision_notes)
+                                    <div style="margin-top:4px;">
+                                        <span class="badge" style="background:#fff1f2; color:#be123c; border:1px solid #fecaca; font-size:10px; cursor:pointer;" title="Catatan sebelumnya: {{ $house->revision_notes }}">
+                                            <i class="fa-solid fa-note-sticky"></i> Ada Catatan Revisi
+                                        </span>
+                                    </div>
+                                @endif
                             </td>
 
                             <td>
@@ -126,13 +156,10 @@
                                             </button>
                                         </form>
 
-                                        {{-- REVISION --}}
-                                        <form method="POST" action="{{ route('admin.review.revision', $house) }}" style="display:inline;" onsubmit="return confirm('Kembalikan data ini ke surveyor untuk revisi?')">
-                                            @csrf
-                                            <button type="submit" class="btn small danger" title="Minta Revisi">
-                                                <i class="fa-solid fa-rotate-left"></i> Revisi
-                                            </button>
-                                        </form>
+                                        {{-- REVISION WITH NOTE --}}
+                                        <button type="button" class="btn small danger" title="Kembalikan ke Surveyor dengan Catatan Revisi" onclick="openRevisionModal('{{ route('admin.review.revision', $house) }}', '{{ $house->house_code }}', @js($house->revision_notes ?? ''))">
+                                            <i class="fa-solid fa-rotate-left"></i> Revisi
+                                        </button>
 
                                     @elseif($house->status === 'verified')
                                         {{-- PUBLISH --}}
@@ -143,13 +170,10 @@
                                             </button>
                                         </form>
 
-                                        {{-- REVISION --}}
-                                        <form method="POST" action="{{ route('admin.review.revision', $house) }}" style="display:inline;" onsubmit="return confirm('Kembalikan data ini ke surveyor untuk revisi?')">
-                                            @csrf
-                                            <button type="submit" class="btn small danger" title="Minta Revisi">
-                                                <i class="fa-solid fa-rotate-left"></i> Revisi
-                                            </button>
-                                        </form>
+                                        {{-- REVISION WITH NOTE --}}
+                                        <button type="button" class="btn small danger" title="Kembalikan ke Surveyor dengan Catatan Revisi" onclick="openRevisionModal('{{ route('admin.review.revision', $house) }}', '{{ $house->house_code }}', @js($house->revision_notes ?? ''))">
+                                            <i class="fa-solid fa-rotate-left"></i> Revisi
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -185,5 +209,85 @@
             </div>
         @endif
     </div>
+
+    {{-- MODAL CATATAN REVISI --}}
+    <div id="revision-modal" role="dialog" aria-modal="true" aria-labelledby="revision-modal-title" style="display:none; position:fixed; inset:0; z-index:2000; padding:20px; background:rgba(15, 23, 42, 0.75); align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+        <div style="background:#ffffff; border-radius:var(--radius-xl); max-width:540px; width:100%; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border:1px solid var(--slate-200); overflow:hidden;">
+            <div style="padding:20px 24px; border-bottom:1px solid var(--slate-200); background:#fff1f2; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:#ffe4e6; color:#e11d48; display:flex; align-items:center; justify-content:center; font-size:16px;">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </div>
+                    <div>
+                        <h3 id="revision-modal-title" style="font-size:16px; font-weight:800; color:#9f1239; margin:0;">
+                            Kembalikan untuk Revisi
+                        </h3>
+                        <p id="revision-house-code" class="muted" style="font-size:12px; margin:2px 0 0 0; font-family:monospace; color:#be123c;"></p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRevisionModal()" style="border:none; background:none; color:var(--slate-400); font-size:18px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="revision-form" method="POST" action="">
+                @csrf
+                <div style="padding:24px;">
+                    <label for="revision_notes" style="display:block; font-size:13px; font-weight:700; color:var(--slate-800); margin-bottom:8px;">
+                        Catatan Revisi / Instruksi Perbaikan <span style="color:#e11d48;">*</span>
+                    </label>
+                    <textarea 
+                        id="revision_notes" 
+                        name="revision_notes" 
+                        rows="4" 
+                        required 
+                        minlength="5"
+                        maxlength="3000"
+                        placeholder="Contoh: Foto tampak depan buram, tolong unggah ulang. Koordinat GPS perlu diperbaiki karena tidak sesuai dengan lokasi desa..."
+                        style="width:100%; border-radius:var(--radius-md); border:1px solid var(--slate-300); padding:12px; font-size:13px; font-family:inherit; resize:vertical; line-height:1.5; box-sizing:border-box;"
+                    ></textarea>
+                </div>
+
+                <div style="padding:16px 24px; background:var(--slate-50); border-top:1px solid var(--slate-200); display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="closeRevisionModal()" class="btn">
+                        Batal
+                    </button>
+                    <button type="submit" class="btn danger" style="background:#e11d48; border-color:#e11d48; color:#fff;">
+                        <i class="fa-solid fa-paper-plane"></i> Kirim Catatan Revisi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        function openRevisionModal(actionUrl, houseCode, existingNotes) {
+            const modal = document.getElementById('revision-modal');
+            const form = document.getElementById('revision-form');
+            const codeEl = document.getElementById('revision-house-code');
+            const notesInput = document.getElementById('revision_notes');
+
+            form.action = actionUrl;
+            codeEl.textContent = 'Kode RTLH: ' + houseCode;
+            notesInput.value = existingNotes || '';
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => notesInput.focus(), 50);
+        }
+
+        function closeRevisionModal() {
+            const modal = document.getElementById('revision-modal');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRevisionModal();
+            }
+        });
+    </script>
+    @endpush
 
 </x-layouts.app>

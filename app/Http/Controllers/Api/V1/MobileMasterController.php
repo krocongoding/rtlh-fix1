@@ -18,6 +18,7 @@ class MobileMasterController extends Controller
         */
 
         $districts = DB::table('regions')
+            ->where('code', 'like', '32.74.%')
             ->where('level', 1)
             ->where('is_active', true)
             ->orderBy('name')
@@ -30,6 +31,7 @@ class MobileMasterController extends Controller
             ]);
 
         $villages = DB::table('regions')
+            ->where('code', 'like', '32.74.%')
             ->where('level', 2)
             ->where('is_active', true)
             ->orderBy('name')

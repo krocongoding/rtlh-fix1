@@ -24,7 +24,7 @@
             <i class="fa-solid fa-triangle-exclamation fa-lg"></i>
             <div>
                 <strong>Perhatian!</strong> Ada <strong>{{ $revision }}</strong> data rumah yang perlu perbaikan/revisi sesuai catatan Admin verifikator.
-                <a href="{{ route('surveyor.rtlh.index') }}" style="color:#991b1b; font-weight:700; text-decoration:underline; margin-left:6px;">
+                <a href="{{ route('surveyor.rtlh.index', ['status' => 'revision']) }}" style="color:#991b1b; font-weight:700; text-decoration:underline; margin-left:6px;">
                     Lihat Data Revisi →
                 </a>
             </div>
@@ -62,14 +62,16 @@
     </div>
 
     <div class="grid3" style="margin-top:20px;">
-        <div class="stat-widget" style="{{ $revision > 0 ? 'border-color:#fecaca; background:#fff1f2;' : '' }}">
-            <div class="stat-widget-icon rose">
-                <i class="fa-solid fa-rotate-left"></i>
+        <a href="{{ route('surveyor.rtlh.index', ['status' => 'revision']) }}" style="text-decoration:none; color:inherit; display:block;">
+            <div class="stat-widget" style="{{ $revision > 0 ? 'border-color:#fecaca; background:#fff1f2;' : '' }}">
+                <div class="stat-widget-icon rose">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </div>
+                <div class="stat-label" style="{{ $revision > 0 ? 'color:#be123c;' : '' }}">Perlu Revisi</div>
+                <div class="stat" style="{{ $revision > 0 ? 'color:#be123c;' : '' }}">{{ number_format($revision) }}</div>
+                <div class="stat-desc">Perbaikan indikator/foto</div>
             </div>
-            <div class="stat-label" style="{{ $revision > 0 ? 'color:#be123c;' : '' }}">Perlu Revisi</div>
-            <div class="stat" style="{{ $revision > 0 ? 'color:#be123c;' : '' }}">{{ number_format($revision) }}</div>
-            <div class="stat-desc">Perbaikan indikator/foto</div>
-        </div>
+        </a>
 
         <div class="stat-widget">
             <div class="stat-widget-icon purple">

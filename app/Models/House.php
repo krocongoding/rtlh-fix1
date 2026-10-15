@@ -7,9 +7,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class House extends Model
 {
-        protected $fillable = [
+    protected $fillable = [
         'client_uuid',
         'region_id',
+        'nik',
+        'head_of_household_name',
         'house_code',
         'address',
         'block',
@@ -20,10 +22,23 @@ class House extends Model
         'household_count',
         'survey_year',
         'status',
+        'realization_status',
+        'realized_at',
+        'realized_by',
+        'realization_notes',
+        'funding_source',
+        'budget_amount',
+        'proposal_document_path',
+        'proposal_notes',
+        'revision_notes',
+        'revised_at',
+        'revised_by',
         'is_public',
         'created_by',
         'updated_by',
         'location',
+        'latitude',
+        'longitude',
         'settlement_condition_id',
         'room_function_id',
         'ownership_status_id',
@@ -39,7 +54,10 @@ class House extends Model
     {
         return [
             'area_m2' => 'decimal:2',
+            'budget_amount' => 'decimal:2',
             'is_public' => 'boolean',
+            'revised_at' => 'datetime',
+            'realized_at' => 'datetime',
         ];
     }
 
@@ -56,6 +74,16 @@ class House extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function reviser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revised_by');
+    }
+
+    public function realizer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'realized_by');
     }
 
     public function assessments()

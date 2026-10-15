@@ -9,6 +9,7 @@ class HouseRoof extends Model
 {
     protected $fillable = [
         'house_id',
+        'frame_material_id',
         'frame_condition_id',
         'material_id',
         'condition_id',
@@ -17,6 +18,11 @@ class HouseRoof extends Model
     public function house()
     {
         return $this->belongsTo(House::class);
+    }
+
+    public function frameMaterial(): BelongsTo
+    {
+        return $this->belongsTo(MasterValue::class, 'frame_material_id');
     }
 
     public function frameCondition(): BelongsTo

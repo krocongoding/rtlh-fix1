@@ -1,4 +1,4 @@
-<x-layouts.app title="Beranda">
+<x-layouts.public title="Beranda">
 
     {{-- HERO SECTION --}}
     <section class="hero home-hero" id="heroSection">
@@ -191,4 +191,4 @@
         </div>
     </section>
 
-</x-layouts.app>
+</x-layouts.public>
